@@ -1,5 +1,6 @@
 import { transformAndValidate } from "class-transformer-validator"
 import { NextFunction, Request, Response } from "express"
+import * as HttpStatus from "http-status-codes"
 import { getRepository } from "typeorm"
 import * as util from "util"
 import { User } from "../entity/User"
@@ -16,7 +17,7 @@ export class UserController {
         const userId: number = request.params.id as number;
         const user = await this.userRepository.findOneById(userId)
         if (user) return user
-        else this.processRepositoryOrDbError(`Cannot find entity by a given id`, 400, userId)
+        else this.processRepositoryOrDbError(`Cannot find entity by a given id`, HttpStatus.BAD_REQUEST, userId)
     }
 
     public async save(request: Request, response: Response, next: NextFunction) {
@@ -24,11 +25,12 @@ export class UserController {
         return transformAndValidate(User, newUser, { validator: { validationError: { target: false } } })
             .then(async (validatedUser: User) => {
                 const savedUser = await this.userRepository.save(validatedUser)
-                response.status(201)
+                response.status(HttpStatus.CREATED)
                 response.location(`${request.protocol}://${request.get("host")}${request.originalUrl}/${savedUser.id}`)
                 return savedUser
             })
-            .catch((error) => this.processRepositoryOrDbError(error.message, 400, undefined, newUser.username))
+            .catch((error) =>
+                this.processRepositoryOrDbError(error.message, HttpStatus.BAD_REQUEST, undefined, newUser.username))
     }
 
     public async update(request: Request, response: Response, next: NextFunction) {
@@ -39,21 +41,22 @@ export class UserController {
                 await this.userRepository.updateById(userId, validatedUser)
                 return this.one(request, response, next)
             })
-            .catch((error) => this.processRepositoryOrDbError(error.message, 400, userId, modifiedUser.username))
+            .catch((error) =>
+                this.processRepositoryOrDbError(error.message, HttpStatus.BAD_REQUEST, userId, modifiedUser.username))
     }
 
     public async remove(request: Request, response: Response, next: NextFunction) {
         const userId = request.params.id
         await this.userRepository.removeById(userId)
-            .catch((error) => this.processRepositoryOrDbError(error.message, 404, userId))
-        response.status(204).end()
+            .catch((error) => this.processRepositoryOrDbError(error.message, HttpStatus.NOT_FOUND, userId))
+        response.status(HttpStatus.NO_CONTENT).end()
     }
 
     public async posts(request: Request, response: Response, next: NextFunction) {
         const userId: number = request.params.id as number;
         const user = await this.userRepository.findOneById(userId, { relations: ["posts"] })
         if (user) return user.posts
-        else this.processRepositoryOrDbError(`Cannot find entity by a given id`, 400, userId)
+        else this.processRepositoryOrDbError(`Cannot find entity by a given id`, HttpStatus.BAD_REQUEST, userId)
     }
 
     /**

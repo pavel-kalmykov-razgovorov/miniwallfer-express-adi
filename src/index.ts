@@ -3,6 +3,7 @@ import * as debug from "debug"
 import * as express from "express"
 import { NextFunction, Request, Response } from "express"
 import * as http from "http"
+import * as HttpStatus from "http-status-codes"
 import * as logger from "morgan"
 import "reflect-metadata"
 import { createConnection } from "typeorm"
@@ -24,7 +25,9 @@ createConnection().then(async (connection) => {
             if (result instanceof Promise)
                 result
                     .then((r) => r !== null && r !== undefined ? res.send(r) : undefined)
-                    .catch((err) => res.status(err.status || 500).send({ message: err.message || err }))
+                    .catch((err) => res
+                        .status(err.status || HttpStatus.INTERNAL_SERVER_ERROR)
+                        .send({ message: err.message || err }))
             else if (result !== null && result !== undefined) res.json(result)
         })
     })
