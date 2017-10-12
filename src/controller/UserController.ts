@@ -22,6 +22,8 @@ export class UserController {
 
     public async save(request: Request, response: Response, next: NextFunction) {
         const newUser = request.body
+        if (Object.keys(newUser).length === 0 && newUser.constructor === Object)
+            response.status(HttpStatus.BAD_REQUEST).send({ mesasge: "Empty user data" })
         return transformAndValidate(User, newUser, { validator: { validationError: { target: false } } })
             .then(async (validatedUser: User) => {
                 const savedUser = await this.userRepository.save(validatedUser)
@@ -36,6 +38,8 @@ export class UserController {
     public async update(request: Request, response: Response, next: NextFunction) {
         const userId = request.params.id;
         const modifiedUser = request.body
+        if (Object.keys(modifiedUser).length === 0 && modifiedUser.constructor === Object)
+            response.status(HttpStatus.BAD_REQUEST).send({ mesasge: "Empty user data" })
         return transformAndValidate(User, modifiedUser, { validator: { validationError: { target: false } } })
             .then(async (validatedUser: User) => {
                 await this.userRepository.updateById(userId, validatedUser)

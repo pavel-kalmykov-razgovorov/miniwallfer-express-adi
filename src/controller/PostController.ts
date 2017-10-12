@@ -22,6 +22,8 @@ export class PostController {
 
     public async save(request: Request, response: Response, next: NextFunction) {
         const newPost = request.body
+        if (Object.keys(newPost).length === 0 && newPost.constructor === Object)
+            response.status(HttpStatus.BAD_REQUEST).send({ mesasge: "Empty user data" })
         return transformAndValidate(Post, newPost, { validator: { validationError: { target: false } } })
             .then(async (validatedUser: Post) => {
                 const savedPost = await this.postRepository.save(validatedUser)
@@ -36,6 +38,8 @@ export class PostController {
     public async update(request: Request, response: Response, next: NextFunction) {
         const postId = request.params.id;
         const modifiedPost = request.body
+        if (Object.keys(modifiedPost).length === 0 && modifiedPost.constructor === Object)
+            response.status(HttpStatus.BAD_REQUEST).send({ mesasge: "Empty user data" })
         return transformAndValidate(Post, modifiedPost, { validator: { validationError: { target: false } } })
             .then(async (validatedPost: Post) => {
                 await this.postRepository.updateById(postId, validatedPost)
