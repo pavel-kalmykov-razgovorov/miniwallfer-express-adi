@@ -1,21 +1,35 @@
 {
-   "name": "mini-wallfer",
-   "version": "0.0.1",
-   "description": "Minimalist version of the Wallfer university platform",
-   "license": "ISC",
-   "devDependencies": {
-      "ts-node": "3.3.0",
-      "@types/node": "^8.0.29",
-      "typescript": "2.5.2"
-   },
-   "dependencies": {
-      "typeorm": "0.1.0",
-      "reflect-metadata": "^0.1.10",
-      "sqlite3": "^3.1.10",
-      "express": "^4.15.4",
-      "body-parser": "^1.18.1"
-   },
-   "scripts": {
-      "start": "ts-node src/index.ts"
-   }
+    "name": "mini-wallfer",
+    "version": "0.0.1",
+    "description": "Minimalist version of the Wallfer university platform",
+    "license": "ISC",
+    "devDependencies": {
+        "@types/node": "^8.0.29",
+        "nodemon": "^1.12.1",
+        "typescript": "2.5.2"
+    },
+    "dependencies": {
+        "body-parser": "^1.18.1",
+        "class-transformer": "^0.1.8",
+        "class-transformer-validator": "^0.4.0",
+        "class-validator": "^0.7.2",
+        "express": "^4.15.4",
+        "reflect-metadata": "^0.1.10",
+        "sqlite3": "^3.1.10",
+        "ts-node": "3.3.0",
+        "typeorm": "0.1.0"
+    },
+    "nodemonConfig": {
+        "watch": [
+            "src"
+        ],
+        "ext": "ts",
+        "ignore": [
+            "src/**/*.spec.ts"
+        ],
+        "exec": "ts-node src/index.ts"
+    },
+    "scripts": {
+        "start": "ts-node src/index.ts"
+    }
 }
