@@ -1,6 +1,7 @@
 import { Type } from "class-transformer";
 import { IsDate, IsNotEmpty, Matches } from "class-validator"
-import { Column, Entity, Index, PrimaryGeneratedColumn } from "typeorm"
+import { Column, Entity, Index, OneToMany, PrimaryGeneratedColumn } from "typeorm"
+import { Post } from "./Post"
 
 @Entity()
 export class User {
@@ -36,4 +37,6 @@ export class User {
     @Type(() => Date)
     public birthdate: Date
 
+    @OneToMany((type) => Post, (post: Post) => post.user, { eager: true })
+    public posts: Post[]
 }
