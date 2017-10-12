@@ -17,13 +17,17 @@ export class PostController {
         const postId: number = request.params.id as number;
         const post = await this.postRepository.findOneById(postId)
         if (post) return post
-        else this.processRepositoryOrDbError(`Cannot find entity by a given id`, HttpStatus.BAD_REQUEST, postId)
+        else
+        this.processRepositoryOrDbError(
+            new Error("Cannot find entity by a given id"),
+            HttpStatus.BAD_REQUEST,
+            postId)
     }
 
     public async save(request: Request, response: Response, next: NextFunction) {
         const newPost = request.body
         if (Object.keys(newPost).length === 0 && newPost.constructor === Object)
-            response.status(HttpStatus.BAD_REQUEST).send({ mesasge: "Empty user data" })
+            response.status(HttpStatus.BAD_REQUEST).send({ message: "Empty user data" })
         return transformAndValidate(Post, newPost, { validator: { validationError: { target: false } } })
             .then(async (validatedUser: Post) => {
                 const savedPost = await this.postRepository.save(validatedUser)
@@ -39,7 +43,7 @@ export class PostController {
         const postId = request.params.id;
         const modifiedPost = request.body
         if (Object.keys(modifiedPost).length === 0 && modifiedPost.constructor === Object)
-            response.status(HttpStatus.BAD_REQUEST).send({ mesasge: "Empty user data" })
+            response.status(HttpStatus.BAD_REQUEST).send({ message: "Empty user data" })
         return transformAndValidate(Post, modifiedPost, { validator: { validationError: { target: false } } })
             .then(async (validatedPost: Post) => {
                 await this.postRepository.updateById(postId, validatedPost)
@@ -66,18 +70,22 @@ export class PostController {
      * it will customize the error with the userId wich caused it.
      *
      * Otherwise, it will throw the error "as is"
-     * @param message the raw error mesasge
+     * @param message the raw error message
      * @param status the http status code
      * @param postId the post's ID
      * @param userId the user's associated to the post ID
      */
-    private processRepositoryOrDbError(message: string, status: number, postId: number, userId?: number) {
-        if (message.match(/.*Cannot find.*/i))
-            message = message
-                .replace("entity", "post")
-                .replace(/ a.*id/, ` the given id: ${postId}`)
-        else if (message.match(/.*FOREIGN KEY.*/i))
-            message = `Username with ID ${userId} doesn't exist`
-        throw { message, status }
+    private processRepositoryOrDbError(error: Error, status: number, postId: number, userId?: number) {
+        if (error.message) {
+            let message = error.message
+            if (message.match(/.*Cannot find.*/i))
+                message = message
+                    .replace("entity", "post")
+                    .replace(/ a.*id/, ` the given id: ${postId}`)
+            else if (message.match(/.*FOREIGN KEY.*/i))
+                message = `Username with ID ${userId} doesn't exist`
+            throw { message, status }
+        }
+        throw { message: error, status }
     }
 }

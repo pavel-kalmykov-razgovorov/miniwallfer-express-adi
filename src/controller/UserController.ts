@@ -17,13 +17,18 @@ export class UserController {
         const userId: number = request.params.id as number;
         const user = await this.userRepository.findOneById(userId)
         if (user) return user
-        else this.processRepositoryOrDbError(`Cannot find entity by a given id`, HttpStatus.BAD_REQUEST, userId)
+        else
+            this.processRepositoryOrDbError(
+                new Error("Cannot find entity by a given id"),
+                HttpStatus.BAD_REQUEST,
+                userId)
     }
 
     public async save(request: Request, response: Response, next: NextFunction) {
         const newUser = request.body
         if (Object.keys(newUser).length === 0 && newUser.constructor === Object)
-            response.status(HttpStatus.BAD_REQUEST).send({ mesasge: "Empty user data" })
+            response.status(HttpStatus.BAD_REQUEST).send({ message: "Empty user data" })
+        console.log("Intento transformar")
         return transformAndValidate(User, newUser, { validator: { validationError: { target: false } } })
             .then(async (validatedUser: User) => {
                 const savedUser = await this.userRepository.save(validatedUser)
@@ -32,27 +37,27 @@ export class UserController {
                 return savedUser
             })
             .catch((error) =>
-                this.processRepositoryOrDbError(error.message, HttpStatus.BAD_REQUEST, undefined, newUser.username))
+                this.processRepositoryOrDbError(error, HttpStatus.BAD_REQUEST, undefined, newUser.username))
     }
 
     public async update(request: Request, response: Response, next: NextFunction) {
         const userId = request.params.id;
         const modifiedUser = request.body
         if (Object.keys(modifiedUser).length === 0 && modifiedUser.constructor === Object)
-            response.status(HttpStatus.BAD_REQUEST).send({ mesasge: "Empty user data" })
+            response.status(HttpStatus.BAD_REQUEST).send({ message: "Empty user data" })
         return transformAndValidate(User, modifiedUser, { validator: { validationError: { target: false } } })
             .then(async (validatedUser: User) => {
                 await this.userRepository.updateById(userId, validatedUser)
                 return this.one(request, response, next)
             })
             .catch((error) =>
-                this.processRepositoryOrDbError(error.message, HttpStatus.BAD_REQUEST, userId, modifiedUser.username))
+                this.processRepositoryOrDbError(error, HttpStatus.BAD_REQUEST, userId, modifiedUser.username))
     }
 
     public async remove(request: Request, response: Response, next: NextFunction) {
         const userId = request.params.id
         await this.userRepository.removeById(userId)
-            .catch((error) => this.processRepositoryOrDbError(error.message, HttpStatus.NOT_FOUND, userId))
+            .catch((error) => this.processRepositoryOrDbError(error, HttpStatus.NOT_FOUND, userId))
         response.status(HttpStatus.NO_CONTENT).end()
     }
 
@@ -60,7 +65,11 @@ export class UserController {
         const userId: number = request.params.id as number;
         const user = await this.userRepository.findOneById(userId, { relations: ["posts"] })
         if (user) return user.posts
-        else this.processRepositoryOrDbError(`Cannot find entity by a given id`, HttpStatus.BAD_REQUEST, userId)
+        else
+        this.processRepositoryOrDbError(
+            new Error("Cannot find entity by a given id"),
+            HttpStatus.BAD_REQUEST,
+            userId)
     }
 
     /**
@@ -73,18 +82,25 @@ export class UserController {
      * it will customize the error with the already existing one.
      *
      * Otherwise, it will throw the error "as is"
-     * @param message the raw error mesasge
+     * @param message the raw error message
      * @param status the http status code
      * @param userId the user's ID (can be undefined if username provided)
      * @param username the username (optional)
      */
-    private processRepositoryOrDbError(message: string, status: number, userId: number, username?: string) {
-        if (message.match(/.*Cannot find.*/i))
-            message = message
-                .replace("entity", "user")
-                .replace(/ a.*id/, ` the given id: ${userId}`)
-        else if (message.match(/.*UNIQUE.*username.*/i))
-            message = `Username ${username} already taken`
-        throw { message, status }
+    private processRepositoryOrDbError(error: Error, status: number, userId: number, username?: string) {
+        if (error.message) {
+            let message = error.message
+            console.log("Proceso error " + message + "; status=" + status)
+            if (message.match(/.*Cannot find.*/i))
+                message = message
+                    .replace("entity", "user")
+                    .replace(/ a.*id/, ` the given id: ${userId}`)
+            else if (message.match(/.*UNIQUE.*username.*/i))
+                message = `Username ${username} already taken`
+            else if (message === "Cannot read property 'match' of undefined")
+                message = "Unable to parse the request body"
+            throw { message, status }
+        }
+        throw { message: error, status }
     }
 }
