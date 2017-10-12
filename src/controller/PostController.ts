@@ -47,6 +47,7 @@ export class PostController {
         return transformAndValidate(Post, modifiedPost, { validator: { validationError: { target: false } } })
             .then(async (validatedPost: Post) => {
                 await this.postRepository.updateById(postId, validatedPost)
+                response.status(HttpStatus.CREATED)
                 return this.one(request, response, next)
             })
             .catch((error) =>

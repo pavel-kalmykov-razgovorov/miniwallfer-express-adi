@@ -48,6 +48,7 @@ export class UserController {
         return transformAndValidate(User, modifiedUser, { validator: { validationError: { target: false } } })
             .then(async (validatedUser: User) => {
                 await this.userRepository.updateById(userId, validatedUser)
+                response.status(HttpStatus.CREATED)
                 return this.one(request, response, next)
             })
             .catch((error) =>
