@@ -12,7 +12,7 @@ export class Post {
     @IsNotEmpty()
     public text: string
 
-    @ManyToOne((type) => User, (user: User) => user.posts, { onDelete: "CASCADE", nullable: false })
+    @ManyToOne((type) => User, (user: User) => user.posts, { eager: true, onDelete: "CASCADE", nullable: false })
     @Type(() => User)
     public user: User;
 }

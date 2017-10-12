@@ -49,6 +49,13 @@ export class UserController {
         response.status(204).end()
     }
 
+    public async posts(request: Request, response: Response, next: NextFunction) {
+        const userId: number = request.params.id as number;
+        const user = await this.userRepository.findOneById(userId, { relations: ["posts"] })
+        if (user) return user.posts
+        else this.processRepositoryOrDbError(`Cannot find entity by a given id`, 400, userId)
+    }
+
     /**
      * Processes any error thrown by the repository or even the DB.
      *

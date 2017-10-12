@@ -37,6 +37,6 @@ export class User {
     @Type(() => Date)
     public birthdate: Date
 
-    @OneToMany((type) => Post, (post: Post) => post.user, { eager: true })
+    @OneToMany((type) => Post, (post: Post) => post.user)
     public posts: Post[]
 }
