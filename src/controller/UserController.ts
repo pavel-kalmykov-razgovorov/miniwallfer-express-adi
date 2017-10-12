@@ -16,7 +16,7 @@ export class UserController {
         const userId: number = request.params.id as number;
         const user = await this.userRepository.findOneById(userId)
         if (user) return user
-        else this.processRepositoryOrDbError(`Cannot find user by the given id: ${userId}`, 400, userId)
+        else this.processRepositoryOrDbError(`Cannot find entity by a given id`, 400, userId)
     }
 
     public async save(request: Request, response: Response, next: NextFunction) {
@@ -68,7 +68,7 @@ export class UserController {
         if (message.match(/.*Cannot find.*/i))
             message = message
                 .replace("entity", "user")
-                .replace(/a.*id/, `the given id: ${userId}`)
+                .replace(/ a.*id/, ` the given id: ${userId}`)
         else if (message.match(/.*UNIQUE.*username.*/i))
             message = `Username ${username} already taken`
         throw { message, status }
