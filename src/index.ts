@@ -7,7 +7,7 @@ import * as HttpStatus from "http-status-codes"
 import * as logger from "morgan"
 import "reflect-metadata"
 import { createConnection } from "typeorm"
-import { User } from "./entity/User"
+import { UserController } from "./controller/UserController"
 import { Routes } from "./routes"
 
 createConnection().then(async (connection) => {
@@ -20,17 +20,28 @@ createConnection().then(async (connection) => {
 
     // register express routes from defined application routes
     Routes.forEach((route) => {
-        (app as any)[route.method](route.route, (req: Request, res: Response, next: NextFunction) => {
+        (app as any)[route.method](route.route, isAutheticated, (req: Request, res: Response, next: NextFunction) => {
             const result = (new route.controller() as any)[route.action](req, res, next)
-            if (result instanceof Promise)
+            if (result instanceof Promise) {
                 result
                     .then((r) => r !== null && r !== undefined ? res.send(r) : undefined)
-                    .catch((err) => res
-                        .status(err.status || HttpStatus.INTERNAL_SERVER_ERROR)
-                        .send({ message: err.message || err }))
-            else if (result !== null && result !== undefined) res.json(result)
+                    .catch((err) => sendHttpError(req, res, next, err))
+            } else if (result !== null && result !== undefined) res.json(result)
         })
     })
+
+    function sendHttpError(req: Request, res: Response, next: NextFunction, err) {
+        res.status(err.status || HttpStatus.INTERNAL_SERVER_ERROR).send({ message: err.message || err })
+    }
+
+    async function isAutheticated(req: Request, res: Response, next: NextFunction) {
+        if ((req.originalUrl === "/login" || req.originalUrl === "/register") && req.method === "POST") next()
+        else {
+            new UserController().getCurrentUser(req, res, next)
+                .then((user) => next())
+                .catch((err) => sendHttpError(req, res, next, err))
+        }
+    }
 
     function configureExpress(): void {
         app.set("port", port)

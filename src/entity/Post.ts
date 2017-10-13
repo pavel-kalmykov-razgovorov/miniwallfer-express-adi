@@ -14,5 +14,6 @@ export class Post {
 
     @ManyToOne((type) => User, (user: User) => user.posts, { eager: true, onDelete: "CASCADE", nullable: false })
     @Type(() => User)
+    @IsNotEmpty()
     public user: User;
 }

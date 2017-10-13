@@ -27,6 +27,16 @@ export const Routes = [{
     method: "delete",
     route: "/users/:id",
 }, {
+    action: "login",
+    controller: UserController,
+    method: "post",
+    route: "/login",
+}, {
+    action: "save", // Register action is the same as the save a new user
+    controller: UserController,
+    method: "post",
+    route: "/register",
+}, {
     action: "posts",
     controller: UserController,
     method: "get",

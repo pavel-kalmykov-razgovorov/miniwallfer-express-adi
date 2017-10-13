@@ -1,4 +1,4 @@
-import { Type } from "class-transformer";
+import { Exclude, Type } from "class-transformer";
 import { IsDate, IsNotEmpty, Matches } from "class-validator"
 import { Column, Entity, Index, OneToMany, PrimaryGeneratedColumn } from "typeorm"
 import { Post } from "./Post"
@@ -16,6 +16,11 @@ export class User {
         message: "Username must be a valid string",
     })
     public username: string
+
+    @Column()
+    @IsNotEmpty()
+    @Exclude({ toPlainOnly: true })
+    public password: string
 
     @Column()
     @IsNotEmpty()
