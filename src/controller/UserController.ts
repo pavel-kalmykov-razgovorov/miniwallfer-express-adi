@@ -134,7 +134,7 @@ export class UserController {
      * it will customize the error with the already existing one.
      *
      * Otherwise, it will throw the error "as is"
-     * @param message the raw error message
+     * @param error the error to process
      * @param status the http status code
      * @param userId the user's ID (can be undefined if username provided)
      * @param username the username (optional)
