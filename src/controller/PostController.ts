@@ -13,7 +13,14 @@ export class PostController {
     private postRepository = getRepository(Post)
 
     public async all(request: Request, response: Response, next: NextFunction) {
-        const posts = await this.postRepository.find()
+        const skip = Number(request.query.start)
+        const take = Number(request.query.size)
+        if (isNaN(skip) || isNaN(take)) {
+            this.processError(
+                new Error("Lists must be paginated with start=<num>&size=<num> query params (use 0 to list all)"),
+                HttpStatus.BAD_REQUEST)
+        }
+        const posts = await this.postRepository.find({ skip, take })
         return classToPlain(posts)
     }
 

@@ -6,12 +6,14 @@ import * as HttpStatus from "http-status-codes"
 import * as jwt from "jwt-simple"
 import { getRepository } from "typeorm"
 import * as util from "util"
+import { Post } from "../entity/Post"
 import { User } from "../entity/User"
 
 export class UserController {
 
     private static secret = "putopavel123" // JWT Secret
     private userRepository = getRepository(User)
+    private postRepository = getRepository(Post)
 
     public async getCurrentUser(request: Request, response: Response, next: NextFunction) {
         const authorizationHeader = request.get("Authorization")
@@ -66,7 +68,14 @@ export class UserController {
     }
 
     public async all(request: Request, response: Response, next: NextFunction) {
-        const users = await this.userRepository.find()
+        const skip = Number(request.query.start)
+        const take = Number(request.query.size)
+        if (isNaN(skip) || isNaN(take)) {
+            this.processError(
+                new Error("Lists must be paginated with start=<num>&size=<num> query params (use 0 to list all)"),
+                HttpStatus.BAD_REQUEST)
+        }
+        const users = await this.userRepository.find({ skip, take })
         return classToPlain(users)
     }
 
@@ -118,10 +127,24 @@ export class UserController {
     }
 
     public async posts(request: Request, response: Response, next: NextFunction) {
+        const skip = Number(request.query.start)
+        const take = Number(request.query.size)
+        if (isNaN(skip) || isNaN(take)) {
+            this.processError(
+                new Error("Lists must be paginated with start=<num>&size=<num> query params (use 0 to list all)"),
+                HttpStatus.BAD_REQUEST)
+        }
         const userId: number = request.params.id as number;
         const user = await this.userRepository.findOneById(userId, { relations: ["posts"] })
         if (!user) this.processError(new Error("Cannot find entity by a given id"), HttpStatus.BAD_REQUEST, userId)
-        return user.posts
+        const posts = await this.postRepository
+            .createQueryBuilder("post")
+            .leftJoinAndSelect("post.user", "user")
+            .where(`user.id == ${userId}`)
+            .skip(skip)
+            .take(take)
+            .getMany()
+        return posts
     }
 
     /**

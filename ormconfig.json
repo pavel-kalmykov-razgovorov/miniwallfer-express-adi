@@ -3,6 +3,7 @@
     "database": "database.sqlite",
     "synchronize": true,
     "logging": [
+        "errors",
         "schema",
         "warn"
     ],
