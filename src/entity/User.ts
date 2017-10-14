@@ -1,10 +1,17 @@
 import { Exclude, Type } from "class-transformer";
-import { IsDate, IsNotEmpty, Matches } from "class-validator"
+import { IsDate, IsNotEmpty, Matches, Length } from "class-validator"
 import { Column, Entity, Index, OneToMany, PrimaryGeneratedColumn } from "typeorm"
 import { Post } from "./Post"
 
 @Entity()
 export class User {
+
+    /**
+     * checks wether the object contains any key or not
+     */
+    public static isEmpty(user: User) {
+        return Object.keys(user).length === 0 && user.constructor === Object
+    }
 
     @PrimaryGeneratedColumn()
     public id: number
@@ -19,6 +26,7 @@ export class User {
 
     @Column()
     @IsNotEmpty()
+    @Length(8, 20)
     @Exclude({ toPlainOnly: true })
     public password: string
 

@@ -6,8 +6,10 @@ import { getRepository } from "typeorm"
 import * as util from "util"
 import { Post } from "../entity/Post"
 import { User } from "../entity/User"
+import { UserController } from "./UserController";
 
 export class PostController {
+    private userController = new UserController()
     private postRepository = getRepository(Post)
 
     public async all(request: Request, response: Response, next: NextFunction) {
@@ -17,54 +19,83 @@ export class PostController {
 
     public async one(request: Request, response: Response, next: NextFunction) {
         const postId: number = request.params.id as number;
+        this.checkPostsId(postId)
         const post = await this.postRepository.findOneById(postId)
         if (!post) this.processError(new Error("Cannot find entity by a given id"), HttpStatus.NOT_FOUND, postId)
         return classToPlain(post)
     }
 
     public async save(request: Request, response: Response, next: NextFunction) {
+        const userId = request.params.id
         const newPost = request.body
-        if (Object.keys(newPost).length === 0 && newPost.constructor === Object) {
-            this.processError(new Error("Empty user data"), HttpStatus.BAD_REQUEST, undefined)
+        this.checkUsersId(userId)
+        await this.checkUserPermissions(request, response, next, userId)
+        if (Post.isEmpty(newPost)) {
+            this.processError(new Error("Empty user data"), HttpStatus.UNPROCESSABLE_ENTITY)
         }
         return transformAndValidate(Post, newPost, { validator: { validationError: { target: false } } })
             .then(async (validatedPost: Post) => {
-                if (!validatedPost.user.id) {
-                    this.processError(
-                        new Error("User's post related entity must provide at least an ID"),
-                        HttpStatus.BAD_REQUEST,
-                        undefined)
-                }
+                validatedPost.user = new User()
+                validatedPost.user.id = userId
                 const savedPost = await this.postRepository.save(validatedPost)
                 response.status(HttpStatus.CREATED)
                 response.location(`${request.protocol}://${request.get("host")}${request.url}/${savedPost.id}`)
                 return classToPlain(savedPost)
             })
             .catch((error) =>
-                this.processError(error, HttpStatus.BAD_REQUEST, undefined, newPost.user ? newPost.user.id : undefined))
+                this.processError(error, HttpStatus.UNPROCESSABLE_ENTITY, undefined, userId))
     }
 
     public async update(request: Request, response: Response, next: NextFunction) {
-        const postId = request.params.id;
+        await this.checkUsersAndPostsIds(request, response, next)
+        const userId = request.params.userId
+        const postId = request.params.postId
         const modifiedPost = request.body
-        if (Object.keys(modifiedPost).length === 0 && modifiedPost.constructor === Object) {
-            response.status(HttpStatus.BAD_REQUEST).send({ message: "Empty user data" })
-        }
+        if (Post.isEmpty(modifiedPost)) this.processError(new Error("Empty post data"), HttpStatus.UNPROCESSABLE_ENTITY)
         return transformAndValidate(Post, modifiedPost, { validator: { validationError: { target: false } } })
             .then(async (validatedPost: Post) => {
                 await this.postRepository.updateById(postId, validatedPost)
                 response.status(HttpStatus.CREATED)
-                return this.one(request, response, next)
+                return classToPlain(await this.postRepository.findOneById(postId))
             })
             .catch((error) =>
-                this.processError(error, HttpStatus.BAD_REQUEST, postId, modifiedPost.user.id))
+                this.processError(error, HttpStatus.UNPROCESSABLE_ENTITY, postId, modifiedPost.user.id))
     }
 
     public async remove(request: Request, response: Response, next: NextFunction) {
-        const postId = request.params.id
+        await this.checkUsersAndPostsIds(request, response, next)
+        const userId = request.params.userId
+        const postId = request.params.postId
         await this.postRepository.removeById(postId)
             .catch((error) => this.processError(error, HttpStatus.NOT_FOUND, postId))
         response.status(HttpStatus.NO_CONTENT).end()
+    }
+
+    private async checkUsersAndPostsIds(request: Request, response: Response, next: NextFunction) {
+        const postId = request.params.postId;
+        const userId = request.params.userId;
+        this.checkPostsId(postId)
+        this.checkUsersId(userId)
+        await this.checkUserPermissions(request, response, next, userId)
+    }
+
+    private async checkUserPermissions(request: Request, response: Response, next: NextFunction, userId: number) {
+        const user = await this.userController.getCurrentUser(request, response, next) as User
+        if (user.id !== Number(userId)) {
+            this.processError(new Error("Trying to access someone else's resources"), HttpStatus.UNAUTHORIZED)
+        }
+    }
+
+    private checkUsersId(userId: number) {
+        if (!userId || isNaN(userId)) {
+            this.processError(new Error("User's ID not present in URL"), HttpStatus.BAD_REQUEST)
+        }
+    }
+
+    private checkPostsId(postId: number) {
+        if (!postId || isNaN(postId)) {
+            this.processError(new Error("Post's ID not present in URL"), HttpStatus.BAD_REQUEST)
+        }
     }
 
     /**
@@ -77,12 +108,12 @@ export class PostController {
      * it will customize the error with the userId wich caused it.
      *
      * Otherwise, it will throw the error "as is"
-     * @param message the raw error message
+     * @param error the error to process
      * @param status the http status code
      * @param postId the post's ID
      * @param userId the user's associated to the post ID
      */
-    private processError(error: Error, status: number, postId: number, userId?: number) {
+    private processError(error: Error, status: number, postId?: number, userId?: number) {
         if (!error.message) throw { message: error, status }
         let message = error.message
         if (message.match(/.*Cannot find.*/i)) {

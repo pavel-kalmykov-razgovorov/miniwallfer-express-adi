@@ -22,7 +22,7 @@ export class UserController {
         if (authorizationParts.length !== 2 || authorizationParts[0] !== "Bearer") {
             this.processError(
                 new Error("Malformed Authorization header (must be 'Bearer' + token)"),
-                HttpStatus.UNAUTHORIZED,
+                HttpStatus.UNPROCESSABLE_ENTITY,
                 undefined)
         }
         try {
@@ -32,7 +32,7 @@ export class UserController {
                     if (!foundUser) {
                         this.processError(
                             new Error("Token's user not found (it may have been deleted)"),
-                            HttpStatus.UNAUTHORIZED,
+                            HttpStatus.NOT_FOUND,
                             undefined)
                     }
                     return foundUser
@@ -43,7 +43,7 @@ export class UserController {
                         HttpStatus.UNAUTHORIZED,
                         undefined))
         } catch {
-            this.processError(new Error("Unable to parse token"), HttpStatus.UNAUTHORIZED, undefined)
+            this.processError(new Error("Unable to parse token"), HttpStatus.UNPROCESSABLE_ENTITY, undefined)
         }
     }
 
@@ -53,7 +53,7 @@ export class UserController {
         if (!username || !password) {
             return this.processError(
                 new Error("Username and password must be provided"),
-                HttpStatus.BAD_REQUEST,
+                HttpStatus.UNPROCESSABLE_ENTITY,
                 undefined)
         }
         const user = new User()
@@ -73,14 +73,14 @@ export class UserController {
     public async one(request: Request, response: Response, next: NextFunction) {
         const userId: number = request.params.id as number;
         const user = await this.userRepository.findOneById(userId)
-        if (!user) this.processError(new Error("Cannot find entity by a given id"), HttpStatus.BAD_REQUEST, userId)
+        if (!user) this.processError(new Error("Cannot find entity by a given id"), HttpStatus.NOT_FOUND, userId)
         return classToPlain(user)
     }
 
     public async save(request: Request, response: Response, next: NextFunction) {
         const newUser = request.body
         if (Object.keys(newUser).length === 0 && newUser.constructor === Object) {
-            this.processError(new Error("Empty user data"), HttpStatus.BAD_REQUEST, undefined)
+            this.processError(new Error("Empty user data"), HttpStatus.UNPROCESSABLE_ENTITY, undefined)
         }
         return transformAndValidate(User, newUser, { validator: { validationError: { target: false } } })
             .then(async (validatedUser: User) => {
@@ -91,14 +91,14 @@ export class UserController {
                 return classToPlain(savedUser)
             })
             .catch((error) =>
-                this.processError(error, HttpStatus.BAD_REQUEST, undefined, newUser.username))
+                this.processError(error, HttpStatus.UNPROCESSABLE_ENTITY, undefined, newUser.username))
     }
 
     public async update(request: Request, response: Response, next: NextFunction) {
         const userId = request.params.id;
         const modifiedUser = request.body
         if (Object.keys(modifiedUser).length === 0 && modifiedUser.constructor === Object) {
-            response.status(HttpStatus.BAD_REQUEST).send({ message: "Empty user data" })
+            response.status(HttpStatus.UNPROCESSABLE_ENTITY).send({ message: "Empty user data" })
         }
         return transformAndValidate(User, modifiedUser, { validator: { validationError: { target: false } } })
             .then(async (validatedUser: User) => {
@@ -107,7 +107,7 @@ export class UserController {
                 return this.one(request, response, next)
             })
             .catch((error) =>
-                this.processError(error, HttpStatus.BAD_REQUEST, userId, modifiedUser.username))
+                this.processError(error, HttpStatus.UNPROCESSABLE_ENTITY, userId, modifiedUser.username))
     }
 
     public async remove(request: Request, response: Response, next: NextFunction) {
@@ -139,17 +139,16 @@ export class UserController {
      * @param userId the user's ID (can be undefined if username provided)
      * @param username the username (optional)
      */
-    private processError(error: Error, status: number, userId: number, username?: string) {
+    private processError(error: Error, status: number, userId?: number, username?: string) {
         if (!error.message) throw { message: error, status }
         let message = error.message
         if (message.match(/.*Cannot find.*/i)) {
+            status = HttpStatus.NOT_FOUND
             message = message
                 .replace("entity", "user")
                 .replace(/ a.*id/, ` the given id: ${userId}`)
         } else if (message.match(/.*UNIQUE.*username.*/i)) {
             message = `Username ${username} already taken`
-        } else if (message === "Cannot read property 'match' of undefined") {
-            message = "Unable to parse the request body"
         }
         throw { message, status }
     }

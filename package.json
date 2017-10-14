@@ -11,7 +11,7 @@
         "@types/morgan": "^1.7.33",
         "@types/node": "^8.0.34",
         "nodemon": "^1.12.1",
-        "typescript": "2.5.2"
+        "typescript": "2.5.3"
     },
     "dependencies": {
         "@types/bcrypt": "^1.0.0",

@@ -31,7 +31,7 @@ createConnection().then(async (connection) => {
     })
 
     function sendHttpError(req: Request, res: Response, next: NextFunction, err) {
-        res.status(err.status || HttpStatus.INTERNAL_SERVER_ERROR).send({ message: err.message || err })
+        return res.status(err.status || HttpStatus.INTERNAL_SERVER_ERROR).send({ message: err.message || err })
     }
 
     async function isAutheticated(req: Request, res: Response, next: NextFunction) {
