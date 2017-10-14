@@ -1,5 +1,5 @@
 import { Exclude, Type } from "class-transformer";
-import { IsDate, IsNotEmpty, Matches, Length } from "class-validator"
+import { IsDate, IsNotEmpty, Length, Matches } from "class-validator"
 import { Column, Entity, Index, OneToMany, PrimaryGeneratedColumn } from "typeorm"
 import { Post } from "./Post"
 
