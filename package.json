@@ -49,6 +49,6 @@
         "exec": "ts-node src/index.ts"
     },
     "scripts": {
-        "start": "ts-node src/index.ts"
+        "start": "npm install && ts-node src/index.ts"
     }
 }
