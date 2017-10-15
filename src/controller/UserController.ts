@@ -8,6 +8,8 @@ import { getRepository } from "typeorm"
 import * as util from "util"
 import { Post } from "../entity/Post"
 import { User } from "../entity/User"
+import PostHalUtils from "../hateoas/PostHalUtils";
+import UserHalUtils from "../hateoas/UserHalUtils";
 
 export class UserController {
 
@@ -75,15 +77,15 @@ export class UserController {
                 new Error("Lists must be paginated with start=<num>&size=<num> query params (use 0 to list all)"),
                 HttpStatus.BAD_REQUEST)
         }
-        const users = await this.userRepository.find({ skip, take })
-        return classToPlain(users)
+        const users = await this.userRepository.findAndCount({ skip, take })
+        return UserHalUtils.getUsersWithNavigationLinks(users, request.path, skip, take)
     }
 
     public async one(request: Request, response: Response, next: NextFunction) {
         const userId: number = request.params.id as number;
         const user = await this.userRepository.findOneById(userId)
         if (!user) this.processError(new Error("Cannot find entity by a given id"), HttpStatus.NOT_FOUND, userId)
-        return classToPlain(user)
+        return UserHalUtils.getUserWithActionLinks(user)
     }
 
     public async save(request: Request, response: Response, next: NextFunction) {
@@ -96,8 +98,8 @@ export class UserController {
                 validatedUser.password = await bcrypt.hash(validatedUser.password, 2)
                 const savedUser = await this.userRepository.save(validatedUser)
                 response.status(HttpStatus.CREATED)
-                response.location(`${request.protocol}://${request.get("host")}${request.originalUrl}/${savedUser.id}`)
-                return classToPlain(savedUser)
+                response.location(`${request.protocol}://${request.get("host")}${request.path}/${savedUser.id}`)
+                return UserHalUtils.getUserWithActionLinks(savedUser)
             })
             .catch((error) =>
                 this.processError(error, HttpStatus.UNPROCESSABLE_ENTITY, undefined, newUser.username))
@@ -113,7 +115,7 @@ export class UserController {
             .then(async (validatedUser: User) => {
                 await this.userRepository.updateById(userId, validatedUser)
                 response.status(HttpStatus.CREATED)
-                return this.one(request, response, next)
+                return UserHalUtils.getUserWithActionLinks(await this.userRepository.findOneById(userId))
             })
             .catch((error) =>
                 this.processError(error, HttpStatus.UNPROCESSABLE_ENTITY, userId, modifiedUser.username))
@@ -135,16 +137,37 @@ export class UserController {
                 HttpStatus.BAD_REQUEST)
         }
         const userId: number = request.params.id as number;
-        const user = await this.userRepository.findOneById(userId, { relations: ["posts"] })
+        const user = await this.userRepository.findOneById(userId)
         if (!user) this.processError(new Error("Cannot find entity by a given id"), HttpStatus.BAD_REQUEST, userId)
-        const posts = await this.postRepository
+        const selectQueryBuilder = await this.postRepository
             .createQueryBuilder("post")
             .leftJoinAndSelect("post.user", "user")
             .where(`user.id == ${userId}`)
-            .skip(skip)
-            .take(take)
-            .getMany()
-        return posts
+        const posts = await selectQueryBuilder.skip(skip).take(take).getMany()
+        const postCount = await selectQueryBuilder.getCount()
+        return PostHalUtils.getPostsWithNavigationLinks([posts, postCount], request.path, skip, take)
+    }
+
+    public async post(request: Request, response: Response, next: NextFunction) {
+        const userId = Number(request.params.userId)
+        const postId = Number(request.params.postId)
+        const user = await this.userRepository.findOneById(userId)
+        if (!user) this.processError(new Error("Cannot find entity by a given id"), HttpStatus.BAD_REQUEST, userId)
+        const post = await this.postRepository.findOneById(postId)
+        if (!post) this.processError(new Error("Cannot find post by a given id"), HttpStatus.BAD_REQUEST, postId)
+        if (!(await this.checkPostBelongToUser(userId, postId))) {
+            this.processError(new Error(`This post doesn't belong to this user`), HttpStatus.NOT_FOUND)
+        }
+        return PostHalUtils.getPostWithActionLinks(post)
+    }
+
+    private async checkPostBelongToUser(userId: number, postId: number) {
+        return await this.postRepository
+            .createQueryBuilder("post")
+            .leftJoinAndSelect("post.user", "user")
+            .where(`user.id == ${userId}`)
+            .andWhere(`post.id == ${postId}`)
+            .getCount() === 1
     }
 
     /**

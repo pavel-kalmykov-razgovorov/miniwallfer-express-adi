@@ -1,4 +1,4 @@
-import { classToPlain } from "class-transformer";
+import { classToPlain } from "class-transformer"
 import { transformAndValidate } from "class-transformer-validator"
 import { NextFunction, Request, Response } from "express"
 import * as HttpStatus from "http-status-codes"
@@ -6,7 +6,8 @@ import { getRepository } from "typeorm"
 import * as util from "util"
 import { Post } from "../entity/Post"
 import { User } from "../entity/User"
-import { UserController } from "./UserController";
+import PostHalUtils from "../hateoas/PostHalUtils"
+import { UserController } from "./UserController"
 
 export class PostController {
     private userController = new UserController()
@@ -20,16 +21,16 @@ export class PostController {
                 new Error("Lists must be paginated with start=<num>&size=<num> query params (use 0 to list all)"),
                 HttpStatus.BAD_REQUEST)
         }
-        const posts = await this.postRepository.find({ skip, take })
-        return classToPlain(posts)
+        const postsAndCount = await this.postRepository.findAndCount({ skip, take })
+        return PostHalUtils.getPostsWithNavigationLinks(postsAndCount, request.path, skip, take)
     }
 
     public async one(request: Request, response: Response, next: NextFunction) {
-        const postId: number = request.params.id as number;
+        const postId: number = request.params.id as number
         this.checkPostsId(postId)
         const post = await this.postRepository.findOneById(postId)
         if (!post) this.processError(new Error("Cannot find entity by a given id"), HttpStatus.NOT_FOUND, postId)
-        return classToPlain(post)
+        return PostHalUtils.getPostWithActionLinks(post)
     }
 
     public async save(request: Request, response: Response, next: NextFunction) {
@@ -47,7 +48,7 @@ export class PostController {
                 const savedPost = await this.postRepository.save(validatedPost)
                 response.status(HttpStatus.CREATED)
                 response.location(`${request.protocol}://${request.get("host")}${request.url}/${savedPost.id}`)
-                return classToPlain(savedPost)
+                return PostHalUtils.getPostWithActionLinks(savedPost)
             })
             .catch((error) =>
                 this.processError(error, HttpStatus.UNPROCESSABLE_ENTITY, undefined, userId))
@@ -63,7 +64,7 @@ export class PostController {
             .then(async (validatedPost: Post) => {
                 await this.postRepository.updateById(postId, validatedPost)
                 response.status(HttpStatus.CREATED)
-                return classToPlain(await this.postRepository.findOneById(postId))
+                return PostHalUtils.getPostWithActionLinks(await this.postRepository.findOneById(postId))
             })
             .catch((error) =>
                 this.processError(error, HttpStatus.UNPROCESSABLE_ENTITY, postId, modifiedPost.user.id))
@@ -79,8 +80,8 @@ export class PostController {
     }
 
     private async checkUsersAndPostsIds(request: Request, response: Response, next: NextFunction) {
-        const postId = request.params.postId;
-        const userId = request.params.userId;
+        const postId = request.params.postId
+        const userId = request.params.userId
         this.checkPostsId(postId)
         this.checkUsersId(userId)
         await this.checkUserPermissions(request, response, next, userId)
