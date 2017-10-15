@@ -3,6 +3,10 @@
     "version": "0.0.1",
     "description": "Minimalist version of the Wallfer university platform",
     "license": "ISC",
+    "engines": {
+        "node": "8.6.0",
+        "npm": "5.4.2"
+    },
     "devDependencies": {
         "@types/bcrypt": "^1.0.0",
         "@types/body-parser": "^1.16.5",
