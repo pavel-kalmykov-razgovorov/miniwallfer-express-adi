@@ -1,5 +1,4 @@
 import * as assert from "assert"
-import * as SpinnerModule from "cli-spinner"
 import * as faker from "faker/locale/es"
 import "reflect-metadata"
 import { createConnection, getRepository } from "typeorm"
@@ -7,7 +6,6 @@ import * as util from "util"
 import * as yargs from "yargs"
 import { Post } from "./src/entity/Post"
 import { User } from "./src/entity/User"
-const Spinner = SpinnerModule.Spinner
 
 yargs.usage(`Usage: $0
 --seed [num]
