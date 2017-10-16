@@ -6,6 +6,7 @@ import * as http from "http"
 import * as HttpStatus from "http-status-codes"
 import * as logger from "morgan"
 import "reflect-metadata"
+import * as swaggerUi from "swagger-ui-express"
 import { createConnection } from "typeorm"
 import { UserController } from "./controller/UserController"
 import { Routes } from "./routes"
@@ -16,11 +17,6 @@ createConnection().then(async (connection) => {
     debug("ts-express:server")
     const port = normalizePort(process.env.PORT || 3000)
     const app = express()
-    app.get("/swagger.json", (req: Request, res: Response, next: NextFunction) => {
-        res.type("application/json")
-        res.send(swaggerSpec)
-    })
-    app.get("/", express.static(`${__dirname}/../swagger-ui`))
     const server = http.createServer(app)
     configureExpress()
 
@@ -57,6 +53,11 @@ createConnection().then(async (connection) => {
         server.listen(port)
         server.on("error", onError)
         server.on("listening", onListening)
+        app.get("/swagger.json", (req: Request, res: Response, next: NextFunction) => {
+            res.type("application/json")
+            res.send(swaggerSpec)
+        })
+        app.use("/", swaggerUi.serve, swaggerUi.setup(swaggerSpec, true))
     }
 
     function normalizePort(val: number | string): number | string | boolean {

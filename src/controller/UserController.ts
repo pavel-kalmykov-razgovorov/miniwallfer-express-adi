@@ -76,6 +76,7 @@ export class UserController {
      *      tags:
      *          - Users
      *      description: Retrieves all the users stored in the DB
+     *      operationId: "getAllUsers"
      *      produces:
      *          - application/json+hal
      *      parameters:
@@ -86,9 +87,16 @@ export class UserController {
      *            type: string
      *          - name: start
      *            in: query
-     *            description: First item in pagination
+     *            description: First item to take in pagination
      *            required: true
      *            type: integer
+     *          - name: size
+     *            in: query
+     *            description: Amount of items to take in pagination
+     *            required: true
+     *      responses:
+     *          default:
+     *              description: "successful operation"
      */
     public async all(request: Request, response: Response, next: NextFunction) {
         const skip = Number(request.query.start)

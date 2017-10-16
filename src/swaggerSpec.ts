@@ -21,4 +21,5 @@ const options = {
     apis: [`${__dirname}/controller/*.ts`],
 }
 
-export default SwaggerJSDoc(options)
+const swaggerJSON = SwaggerJSDoc(options)
+module.exports = swaggerJSON
