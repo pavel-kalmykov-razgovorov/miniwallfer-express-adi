@@ -56,7 +56,8 @@ createConnection().then(async (connection) => {
             res.type("application/json")
             res.send(swaggerSpec)
         })
-        app.get("/", swaggerUi.serve, swaggerUi.setup(swaggerSpec, true))
+        app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec, true))
+        app.get("/", (req: Request, res: Response, next: NextFunction) => res.redirect("api-docs"))
     }
 
     function normalizePort(val: number | string): number | string | boolean {
