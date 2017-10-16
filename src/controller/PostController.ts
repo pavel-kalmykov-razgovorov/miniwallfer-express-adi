@@ -22,6 +22,7 @@ export class PostController {
                 HttpStatus.BAD_REQUEST)
         }
         const postsAndCount = await this.postRepository.findAndCount({ skip, take })
+        response.type("application/json+hal")
         return PostHalUtils.getPostsWithNavigationLinks(postsAndCount, request.path, skip, take)
     }
 
@@ -30,6 +31,7 @@ export class PostController {
         this.checkPostsId(postId)
         const post = await this.postRepository.findOneById(postId)
         if (!post) this.processError(new Error("Cannot find entity by a given id"), HttpStatus.NOT_FOUND, postId)
+        response.type("application/json+hal")
         return PostHalUtils.getPostWithActionLinks(post)
     }
 
@@ -48,6 +50,7 @@ export class PostController {
                 const savedPost = await this.postRepository.save(validatedPost)
                 response.status(HttpStatus.CREATED)
                 response.location(`${request.protocol}://${request.get("host")}${request.url}/${savedPost.id}`)
+                response.type("application/json+hal")
                 return PostHalUtils.getPostWithActionLinks(savedPost)
             })
             .catch((error) =>
@@ -64,6 +67,7 @@ export class PostController {
             .then(async (validatedPost: Post) => {
                 await this.postRepository.updateById(postId, validatedPost)
                 response.status(HttpStatus.CREATED)
+                response.type("application/json+hal")
                 return PostHalUtils.getPostWithActionLinks(await this.postRepository.findOneById(postId))
             })
             .catch((error) =>

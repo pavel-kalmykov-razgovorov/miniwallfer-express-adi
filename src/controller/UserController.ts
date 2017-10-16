@@ -99,6 +99,7 @@ export class UserController {
                 HttpStatus.BAD_REQUEST)
         }
         const users = await this.userRepository.findAndCount({ skip, take })
+        response.type("application/json+hal")
         return UserHalUtils.getUsersWithNavigationLinks(users, request.path, skip, take)
     }
 
@@ -106,6 +107,7 @@ export class UserController {
         const userId: number = request.params.id as number;
         const user = await this.userRepository.findOneById(userId)
         if (!user) this.processError(new Error("Cannot find entity by a given id"), HttpStatus.NOT_FOUND, userId)
+        response.type("application/json+hal")
         return UserHalUtils.getUserWithActionLinks(user)
     }
 
@@ -120,6 +122,7 @@ export class UserController {
                 const savedUser = await this.userRepository.save(validatedUser)
                 response.status(HttpStatus.CREATED)
                 response.location(`${request.protocol}://${request.get("host")}${request.path}/${savedUser.id}`)
+                response.type("application/json+hal")
                 return UserHalUtils.getUserWithActionLinks(savedUser)
             })
             .catch((error) =>
@@ -136,6 +139,7 @@ export class UserController {
             .then(async (validatedUser: User) => {
                 await this.userRepository.updateById(userId, validatedUser)
                 response.status(HttpStatus.CREATED)
+                response.type("application/json+hal")
                 return UserHalUtils.getUserWithActionLinks(await this.userRepository.findOneById(userId))
             })
             .catch((error) =>
@@ -166,6 +170,7 @@ export class UserController {
             .where(`user.id == ${userId}`)
         const posts = await selectQueryBuilder.skip(skip).take(take).getMany()
         const postCount = await selectQueryBuilder.getCount()
+        response.type("application/json+hal")
         return PostHalUtils.getPostsWithNavigationLinks([posts, postCount], request.path, skip, take)
     }
 
@@ -179,6 +184,7 @@ export class UserController {
         if (!(await this.checkPostBelongToUser(userId, postId))) {
             this.processError(new Error(`This post doesn't belong to this user`), HttpStatus.NOT_FOUND)
         }
+        response.type("application/json+hal")
         return PostHalUtils.getPostWithActionLinks(post)
     }
 
