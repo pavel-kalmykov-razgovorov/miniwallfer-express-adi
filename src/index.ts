@@ -18,7 +18,6 @@ createConnection().then(async (connection) => {
     const port = normalizePort(process.env.PORT || 3000)
     const app = express()
     const server = http.createServer(app)
-    configureExpress()
 
     // register express routes from defined application routes
     Routes.forEach((route) => {
@@ -57,7 +56,7 @@ createConnection().then(async (connection) => {
             res.type("application/json")
             res.send(swaggerSpec)
         })
-        app.use("/", swaggerUi.serve, swaggerUi.setup(swaggerSpec, true))
+        app.get("/", swaggerUi.serve, swaggerUi.setup(swaggerSpec, true))
     }
 
     function normalizePort(val: number | string): number | string | boolean {
@@ -90,5 +89,6 @@ createConnection().then(async (connection) => {
         debug(`Listening on ${bind}`)
     }
 
+    configureExpress()
     console.log(`Express started on port ${port}`)
 }).catch((error) => console.log(error))
