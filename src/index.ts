@@ -9,12 +9,18 @@ import "reflect-metadata"
 import { createConnection } from "typeorm"
 import { UserController } from "./controller/UserController"
 import { Routes } from "./routes"
+import * as swaggerSpec from "./swaggerSpec"
 
 createConnection().then(async (connection) => {
     // create express app
     debug("ts-express:server")
     const port = normalizePort(process.env.PORT || 3000)
     const app = express()
+    app.get("/swagger.json", (req: Request, res: Response, next: NextFunction) => {
+        res.type("application/json")
+        res.send(swaggerSpec)
+    })
+    app.get("/", express.static(`${__dirname}/../swagger-ui`))
     const server = http.createServer(app)
     configureExpress()
 

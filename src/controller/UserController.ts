@@ -69,6 +69,27 @@ export class UserController {
         return { token: jwt.encode(foundUser, UserController.secret) }
     }
 
+    /**
+     * @swagger
+     * /users:
+     *  get:
+     *      tags:
+     *          - Users
+     *      description: Retrieves all the users stored in the DB
+     *      produces:
+     *          - application/json+hal
+     *      parameters:
+     *          - name: Authorization
+     *            in: header
+     *            description: Bearer + JWT Token
+     *            required: true
+     *            type: string
+     *          - name: start
+     *            in: query
+     *            description: First item in pagination
+     *            required: true
+     *            type: integer
+     */
     public async all(request: Request, response: Response, next: NextFunction) {
         const skip = Number(request.query.start)
         const take = Number(request.query.size)

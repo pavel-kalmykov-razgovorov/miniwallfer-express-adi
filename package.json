@@ -16,8 +16,10 @@
         "@types/jwt-simple": "^0.5.33",
         "@types/morgan": "^1.7.33",
         "@types/node": "^8.0.34",
+        "@types/swagger-jsdoc": "0.0.1",
         "@types/yargs": "^8.0.2",
-        "nodemon": "^1.12.1"
+        "nodemon": "^1.12.1",
+        "swagger-jsdoc": "^1.9.7"
     },
     "dependencies": {
         "bcrypt": "^1.0.3",
