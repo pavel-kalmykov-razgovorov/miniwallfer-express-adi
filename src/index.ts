@@ -12,7 +12,7 @@ import { UserController } from "./controller/UserController"
 import { Routes } from "./routes"
 import * as swaggerSpec from "./swaggerSpec"
 
-createConnection().then(async (connection) => {
+const persistentServer = createConnection().then((connection) => {
     // create express app
     debug("ts-express:server")
     const port = normalizePort(process.env.PORT || 3000)
@@ -92,4 +92,7 @@ createConnection().then(async (connection) => {
 
     configureExpress()
     console.log(`Express started on port ${port}`)
+    return app
 }).catch((error) => console.log(error))
+
+export default persistentServer
