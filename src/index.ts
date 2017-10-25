@@ -18,6 +18,7 @@ const persistentServer = createConnection().then((connection) => {
     const port = normalizePort(process.env.PORT || 3000)
     const app = express()
     const server = http.createServer(app)
+    configureExpress()
 
     // register express routes from defined application routes
     Routes.forEach((route) => {
@@ -90,7 +91,6 @@ const persistentServer = createConnection().then((connection) => {
         debug(`Listening on ${bind}`)
     }
 
-    configureExpress()
     console.log(`Express started on port ${port}`)
     return app
 }).catch((error) => console.log(error))
