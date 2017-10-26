@@ -15,7 +15,7 @@ const swaggerDefinition = {
         },
         schemes: ["http"],
         consumes: ["application/json"],
-        produces: ["application/hal+json"],
+        produces: ["application/json", "application/hal+json"],
     },
     definitions: {
         User: {
@@ -52,8 +52,41 @@ const swaggerDefinition = {
             required: ["message"],
         },
     },
+    parameters: {
+        startParam: {
+            name: "start",
+            in: "query",
+            description: "First item to take in the pagination",
+            required: true,
+            type: "integer",
+            default: 0,
+        },
+        sizeParam: {
+            name: "size",
+            in: "query",
+            description: "Amount of items to take in the pagination",
+            required: true,
+            type: "integer",
+            default: 10,
+        },
+    },
+    responses: {
+        ListNotPaginated: {
+            description: "Due to performance reasons, the list must be paginated,\
+                \ but you didn't provide the start & size query parameters",
+            schema: { $ref: "#/definitions/ApiError" },
+            examples: {
+                "application/json": {
+                    message: "Lists must be paginated with start=<num>&size=<num> query params (use 0 to list all)",
+                },
+            },
+        },
+        Ok: {
+            description: "The expected, normal response when everything is correct",
+        },
+    },
     securityDefinitions: {
-        jwt : {
+        jwt: {
             type: "apiKey",
             name: "Authorization",
             in: "header",
