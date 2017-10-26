@@ -74,24 +74,19 @@ export class UserController {
      * /users:
      *  get:
      *      tags:
-     *          - Users
+     *          - User
      *      description: Retrieves all the users stored in the DB
      *      operationId: "getAllUsers"
      *      produces:
      *          - application/hal+json
      *      parameters:
-     *          - name: start
-     *            in: query
-     *            description: First item to take in pagination
-     *            required: true
-     *            type: integer
-     *          - name: size
-     *            in: query
-     *            description: Amount of items to take in pagination
-     *            required: true
+     *          - $ref: "#/parameters/startParam"
+     *          - $ref: "#/parameters/sizeParam"
      *      responses:
-     *          default:
-     *              description: "successful operation"
+     *          400:
+     *              $ref: "#/responses/ListNotPaginated"
+     *          200:
+     *              $ref: "#/responses/Ok"
      *      security:
      *          - jwt: []
      */
