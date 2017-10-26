@@ -13,6 +13,13 @@ const swaggerDefinition = {
             url: "http://www.apache.org/licenses/LICENSE-2.0.html",
         },
         version: "0.1.1",
+    }, securityDefinitions: {
+        jwt : {
+            type: "apiKey",
+            name: "Authorization",
+            in: "header",
+            description: "Must follow the format \"`Bearer [jwt-token]`\"",
+        },
     },
 }
 

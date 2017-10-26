@@ -80,11 +80,6 @@ export class UserController {
      *      produces:
      *          - application/hal+json
      *      parameters:
-     *          - name: Authorization
-     *            in: header
-     *            description: Bearer + JWT Token
-     *            required: true
-     *            type: string
      *          - name: start
      *            in: query
      *            description: First item to take in pagination
@@ -97,6 +92,8 @@ export class UserController {
      *      responses:
      *          default:
      *              description: "successful operation"
+     *      security:
+     *          - jwt: []
      */
     public async all(request: Request, response: Response, next: NextFunction) {
         const skip = Number(request.query.start)
