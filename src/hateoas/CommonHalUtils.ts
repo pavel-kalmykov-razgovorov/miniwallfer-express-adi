@@ -16,8 +16,8 @@ export default class CommonHalUtils {
         CommonHalUtils.addLink(object, "self", `${url}?start=${skip}&size=${take}`)
         CommonHalUtils.addLink(object, "first", `${url}?start=0&size=${take}`)
         CommonHalUtils.addLink(object, "prev", `${url}?start=${Math.max(skip - take, 0)}&size=${take}`)
-        CommonHalUtils.addLink(object, "next", `${url}?start=${skip + take}&size=${take}`)
-        CommonHalUtils.addLink(object, "last", `${url}?start=${entityCount - take}&size=${take}`)
+        CommonHalUtils.addLink(object, "next", `${url}?start=${Math.min(skip + take, entityCount - take)}&size=${take}`)
+        CommonHalUtils.addLink(object, "last", `${url}?start=${Math.max(entityCount - take, 0)}&size=${take}`)
         CommonHalUtils.addLink(object, "one", `/:id`, true)
     }
 
