@@ -7,11 +7,6 @@ export const Routes = [{
     method: "post",
     route: "/login",
 }, {
-    action: "save",
-    controller: UserController,
-    method: "post",
-    route: "/register", // Register action actually means save a new user
-}, {
     action: "all",
     controller: UserController,
     method: "get",
@@ -21,6 +16,11 @@ export const Routes = [{
     controller: UserController,
     method: "get",
     route: "/users/:id",
+}, {
+    action: "save",
+    controller: UserController,
+    method: "post",
+    route: "/users", // Register action actually means save a new user
 }, {
     action: "update",
     controller: UserController,

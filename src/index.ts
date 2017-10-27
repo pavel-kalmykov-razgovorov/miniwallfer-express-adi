@@ -37,7 +37,7 @@ const persistentServer = createConnection().then((connection) => {
     }
 
     async function isAutheticated(req: Request, res: Response, next: NextFunction) {
-        if ((req.originalUrl === "/login" || req.originalUrl === "/register") && req.method === "POST") next()
+        if ((req.originalUrl === "/login" || req.originalUrl === "/users") && req.method === "POST") next()
         else {
             new UserController().getCurrentUser(req, res, next)
                 .then((user) => next())
