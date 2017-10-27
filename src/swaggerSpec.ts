@@ -93,6 +93,15 @@ const swaggerDefinition = {
             description: "Must follow the format \"`Bearer [jwt-token]`\"",
         },
     },
+    security: {
+        jwt: [],
+    },
+    tags: {
+        Users: {
+            name: "Users",
+            description: "User's resource operations",
+        },
+    },
 }
 
 const options = {

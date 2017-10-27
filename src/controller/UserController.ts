@@ -74,11 +74,12 @@ export class UserController {
      * /users:
      *  get:
      *      tags:
-     *          - User
+     *          - Users
      *      description: Retrieves all the users stored in the DB
      *      operationId: "getAllUsers"
      *      produces:
      *          - application/hal+json
+     *          - application/json
      *      parameters:
      *          - $ref: "#/parameters/startParam"
      *          - $ref: "#/parameters/sizeParam"
