@@ -263,6 +263,35 @@ export class UserController {
         response.status(HttpStatus.NO_CONTENT).end()
     }
 
+    /**
+     * @swagger
+     * /users/{id}/posts:
+     *     get:
+     *         tags:
+     *             - Posts
+     *         description: Retrieves all the posts from a specified user stored in the DB
+     *         operationId: "getAllUserPosts"
+     *         produces:
+     *             - application/hal+json
+     *             - application/json
+     *         parameters:
+     *             - $ref: "#/parameters/id"
+     *             - $ref: "#/parameters/startParam"
+     *             - $ref: "#/parameters/sizeParam"
+     *         responses:
+     *             200:
+     *                 $ref: "#/responses/Ok"
+     *             400:
+     *                 $ref: "#/responses/BadUrl"
+     *             400-v2:
+     *                 $ref: "#/responses/ListNotPaginated"
+     *             401:
+     *                 $ref: "#/responses/Unauthorized"
+     *             404:
+     *                 $ref: "#/responses/EntityNotFound"
+     *         security:
+     *             - jwt: []
+     */
     public async posts(request: Request, response: Response, next: NextFunction) {
         const skip = Number(request.query.start)
         const take = Number(request.query.size)
@@ -284,6 +313,37 @@ export class UserController {
         return PostHalUtils.getPostsWithNavigationLinks([posts, postCount], request.path, skip, take)
     }
 
+    /**
+     * @swagger
+     * /users/{userId}/posts/{postId}:
+     *     get:
+     *         tags:
+     *             - Posts
+     *         description: Retrieves a selected post (from the given user) from the DB
+     *         operationId: getUserPost
+     *         produces:
+     *             - application/json
+     *         parameters:
+     *             - allOf:
+     *                 - $ref: "#/parameters/id"
+     *                 - name: "userId"
+     *                 - description: "User's ID"
+     *             - allOf:
+     *                 - $ref: "#/parameters/id"
+     *                 - name: "postId"
+     *                 - description: "Post's ID"
+     *         responses:
+     *             200:
+     *                 $ref: "#/responses/Ok"
+     *             400:
+     *                 $ref: "#/responses/BadUrl"
+     *             401:
+     *                 $ref: "#/responses/Unauthorized"
+     *             404:
+     *                 $ref: "#/responses/EntityNotFound"
+     *         security:
+     *             - jwt: []
+     */
     public async post(request: Request, response: Response, next: NextFunction) {
         const userId = Number(request.params.userId)
         const postId = Number(request.params.postId)

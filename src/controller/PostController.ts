@@ -13,6 +13,30 @@ export class PostController {
     private userController = new UserController()
     private postRepository = getRepository(Post)
 
+    /**
+     * @swagger
+     * /posts:
+     *     get:
+     *         tags:
+     *             - Posts
+     *         description: Retrieves all the posts stored in the DB
+     *         operationId: "getAllPosts"
+     *         produces:
+     *             - application/hal+json
+     *             - application/json
+     *         parameters:
+     *             - $ref: "#/parameters/startParam"
+     *             - $ref: "#/parameters/sizeParam"
+     *         responses:
+     *             200:
+     *                 $ref: "#/responses/Ok"
+     *             400:
+     *                 $ref: "#/responses/ListNotPaginated"
+     *             401:
+     *                 $ref: "#/responses/Unauthorized"
+     *         security:
+     *             - jwt: []
+     */
     public async all(request: Request, response: Response, next: NextFunction) {
         const skip = Number(request.query.start)
         const take = Number(request.query.size)
@@ -26,6 +50,31 @@ export class PostController {
         return PostHalUtils.getPostsWithNavigationLinks(postsAndCount, request.path, skip, take)
     }
 
+    /**
+     * @swagger
+     * /posts/{id}:
+     *     get:
+     *         tags:
+     *             - Posts
+     *         description: Retrieves a single post stored in the DB
+     *         operationId: gePost
+     *         produces:
+     *             - application/hal+json
+     *             - application/json
+     *         parameters:
+     *             - $ref: "#/parameters/id"
+     *         responses:
+     *             200:
+     *                 $ref: "#/responses/Ok"
+     *             400:
+     *                 $ref: "#/responses/BadUrl"
+     *             401:
+     *                 $ref: "#/responses/Unauthorized"
+     *             404:
+     *                 $ref: "#/responses/EntityNotFound"
+     *         security:
+     *             - jwt: []
+     */
     public async one(request: Request, response: Response, next: NextFunction) {
         const postId: number = request.params.id as number
         this.checkPostsId(postId)
@@ -35,6 +84,30 @@ export class PostController {
         return PostHalUtils.getPostWithActionLinks(post)
     }
 
+    /**
+     * @swagger
+     * /users/{id}/posts:
+     *     post:
+     *         tags:
+     *             - Posts
+     *         description: Saves a new post (from the given user) to the DB
+     *         operationId: savePost
+     *         produces:
+     *             - application/hal+json
+     *             - application/json
+     *         parameters:
+     *             - $ref: "#/parameters/id"
+     *             - $ref: "#/parameters/newPost"
+     *         responses:
+     *             201:
+     *                 $ref: "#/responses/Created"
+     *             400:
+     *                 $ref: "#/responses/BadUrl"
+     *             422:
+     *                 $ref: "#/responses/UnprocessableEntity"
+     *         security:
+     *             - jwt: []
+     */
     public async save(request: Request, response: Response, next: NextFunction) {
         const userId = request.params.id
         const newPost = request.body
@@ -57,6 +130,39 @@ export class PostController {
                 this.processError(error, HttpStatus.UNPROCESSABLE_ENTITY, undefined, userId))
     }
 
+    /**
+     * @swagger
+     * /users/{userId}/posts/{postId}:
+     *     put:
+     *         tags:
+     *             - Posts
+     *         description: Updates a selected post (from the given user) and merges it to the DB
+     *         operationId: updatePost
+     *         produces:
+     *             - application/hal+json
+     *             - application/json
+     *         parameters:
+     *             - allOf:
+     *                 - $ref: "#/parameters/id"
+     *                 - name: "userId"
+     *                 - description: "User's ID"
+     *             - allOf:
+     *                 - $ref: "#/parameters/id"
+     *                 - name: "postId"
+     *                 - description: "Post's ID"
+     *             - $ref: "#/parameters/newPost"
+     *         responses:
+     *             201:
+     *                 $ref: "#/responses/Created"
+     *             400:
+     *                 $ref: "#/responses/BadUrl"
+     *             401:
+     *                 $ref: "#/responses/Unauthorized"
+     *             422:
+     *                 $ref: "#/responses/UnprocessableEntity"
+     *         security:
+     *             - jwt: []
+     */
     public async update(request: Request, response: Response, next: NextFunction) {
         await this.checkUsersAndPostsIds(request, response, next)
         const userId = request.params.userId
@@ -74,6 +180,37 @@ export class PostController {
                 this.processError(error, HttpStatus.UNPROCESSABLE_ENTITY, postId, modifiedPost.user.id))
     }
 
+    /**
+     * @swagger
+     * /users/{userId}/posts/{postId}:
+     *     delete:
+     *         tags:
+     *             - Posts
+     *         description: Deletes a selected post (from the given user) from the DB
+     *         operationId: deletePost
+     *         produces:
+     *             - application/json
+     *         parameters:
+     *             - allOf:
+     *                 - $ref: "#/parameters/id"
+     *                 - name: "userId"
+     *                 - description: "User's ID"
+     *             - allOf:
+     *                 - $ref: "#/parameters/id"
+     *                 - name: "postId"
+     *                 - description: "Post's ID"
+     *         responses:
+     *             204:
+     *                 $ref: "#/responses/EmptyResponse"
+     *             400:
+     *                 $ref: "#/responses/BadUrl"
+     *             401:
+     *                 $ref: "#/responses/Unauthorized"
+     *             404:
+     *                 $ref: "#/responses/EntityNotFound"
+     *         security:
+     *             - jwt: []
+     */
     public async remove(request: Request, response: Response, next: NextFunction) {
         await this.checkUsersAndPostsIds(request, response, next)
         const userId = request.params.userId

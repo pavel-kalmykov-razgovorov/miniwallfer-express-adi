@@ -2,16 +2,16 @@ import SwaggerJSDoc = require("swagger-jsdoc")
 
 const swaggerDefinition = {
     info: {
-        version: "0.1.1",
+        version: "0.3.0",
         title: "Mini Wallfer",
         description: "Minimalistic implementation of the Wallfer platform for colleges",
         contact: {
             name: "Pavel Razgovorov",
             email: "pr18@alu.ua.es",
+            url: "http://github.com/paveltrufi/",
         },
         license: {
             name: "MIT",
-            url: "http://github.com/gruntjs/grunt/blob/master/LICENSE-MIT",
         },
         schemes: ["http"],
         consumes: ["application/json"],
@@ -75,6 +75,33 @@ const swaggerDefinition = {
             },
             type: "object",
         },
+        Post: {
+            allOf: [
+                {
+                    $ref: "#/definitions/NewPost",
+                },
+                {
+                    title: "Post",
+                    description: "An existent post (persisted in the DB with an ID)",
+                    properties: {
+                        id: { type: "integer" },
+                        user: { type: "object" },
+                    },
+                    required: ["id"],
+                },
+            ],
+        },
+        NewPost: {
+            title: "New Post",
+            description: "The post's content",
+            properties: {
+                text: { type: "string" },
+            },
+            required: ["text"],
+            example: {
+                text: "This is an example post. Say something nice!",
+            },
+        },
         ApiError: {
             type: "object",
             properties: {
@@ -121,6 +148,13 @@ const swaggerDefinition = {
             required: true,
             schema: { $ref: "#/definitions/NewUser" },
         },
+        newPost: {
+            name: "New Post",
+            in: "body",
+            description: "The post's content",
+            required: true,
+            schema: { $ref: "#/definitions/NewPost" },
+        },
     },
     responses: {
         Ok: {
@@ -133,18 +167,18 @@ const swaggerDefinition = {
         EmptyResponse: {
             description: "Empty response because there's nothing to return",
         },
+        BadUrl: {
+            description: "The URL is malformed, maybe because of a missing ID. Please check it out",
+        },
         ListNotPaginated: {
-            description: "Due to performance reasons, the list must be paginated,\
+            description: "Due to performance reasons, lists must be paginated,\
                 \ but you didn't provide the start & size query parameters",
-            schema: { $ref: "#/definitions/ApiError" },
         },
         Unauthorized: {
             description: "The endpoint is secured and there's an error with the JWT Token's authentication",
-            schema: { $ref: "#/definitions/ApiError" },
         },
         EntityNotFound: {
             description: "The entity you were looking for doesn't exist or is no longer available",
-            schema: { $ref: "#/definitions/ApiError" },
         },
         UnprocessableEntity: {
             description: "There are errors in the request. Please read the response in order to understand the error",
@@ -162,13 +196,17 @@ const swaggerDefinition = {
         jwt: [],
     },
     tags: {
+        Authentication: {
+            name: "Authentication",
+            description: "Login, register and other security operations",
+        },
         Users: {
             name: "Users",
             description: "User's resource operations",
         },
-        Authentication: {
-            name: "Authentication",
-            description: "Login, register and other security operations",
+        Posts: {
+            name: "Posts",
+            description: "Post's resource operations",
         },
     },
 }
