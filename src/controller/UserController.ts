@@ -26,7 +26,7 @@ export class UserController {
         if (authorizationParts.length !== 2 || authorizationParts[0] !== "Bearer") {
             this.processError(
                 new Error("Malformed Authorization header (must be 'Bearer' + token)"),
-                HttpStatus.UNPROCESSABLE_ENTITY,
+                HttpStatus.UNAUTHORIZED,
                 undefined)
         }
         try {
@@ -36,7 +36,7 @@ export class UserController {
                     if (!foundUser) {
                         this.processError(
                             new Error("Token's user not found (it may have been deleted)"),
-                            HttpStatus.NOT_FOUND,
+                            HttpStatus.UNAUTHORIZED,
                             undefined)
                     }
                     return foundUser
