@@ -214,6 +214,8 @@ export class UserController {
      *                 $ref: "#/responses/Unauthorized"
      *             422:
      *                 $ref: "#/responses/UnprocessableEntity"
+     *         security:
+     *             - jwt: []
      */
     public async update(request: Request, response: Response, next: NextFunction) {
         const userId = request.params.id;
@@ -251,6 +253,8 @@ export class UserController {
      *                 $ref: "#/responses/Unauthorized"
      *             404:
      *                 $ref: "#/responses/EntityNotFound"
+     *         security:
+     *             - jwt: []
      */
     public async remove(request: Request, response: Response, next: NextFunction) {
         const userId = request.params.id
