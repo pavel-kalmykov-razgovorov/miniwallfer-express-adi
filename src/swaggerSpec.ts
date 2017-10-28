@@ -25,24 +25,55 @@ const swaggerDefinition = {
                 },
                 {
                     title: "User",
+                    description: "An existent user (persisted in the DB with an ID)",
                     properties: {
                         id: { type: "integer" },
+                        posts: { type: "object" },
                     },
                     required: ["id"],
+                    example: {
+                        password: "~won't be sent~",
+                        id: 1,
+                        posts: [],
+                      },
                 },
             ],
         },
         NewUser: {
-            type: "object",
-            description: "A new (not registered) user wich doesn't have posts nor an ID",
+            allOf: [
+                {
+                    $ref: "#/definitions/Login",
+                },
+                {
+                    title: "New User",
+                    description: "A new (not registered) user wich doesn't have posts nor an ID",
+                    properties: {
+                        firstName: { type: "string" },
+                        lastName: { type: "string" },
+                        birthdate: { type: "string" },
+                    },
+                    required: ["firstName", "lastName", "birthdate"],
+                    example: {
+                        firstName: "Pavel",
+                        lastName: "Razgovorov",
+                        birthdate: "1996-11-27",
+                      },
+                },
+            ],
+        },
+        Login: {
+            title: "Login Credentials",
+            description: "The required credentials in order to login to the API",
             properties: {
                 username: { type: "string" },
-                password: { type: "string" },
-                firstName: { type: "string" },
-                lastName: { type: "string" },
-                birthdate: { type: "string" },
+                password: { type: "string", format: "password" },
             },
-            required: ["username", "password", "firstName", "lastName", "birthdate"],
+            required: ["username", "password"],
+            example: {
+                username: "paveltrufi",
+                password: "mysecret123",
+            },
+            type: "object",
         },
         ApiError: {
             type: "object",
@@ -53,6 +84,13 @@ const swaggerDefinition = {
         },
     },
     parameters: {
+        id: {
+            name: "id",
+            in: "path",
+            description: "The ID that identifies uniquely the entity",
+            required: true,
+            type: "integer",
+        },
         startParam: {
             name: "start",
             in: "query",
@@ -69,20 +107,47 @@ const swaggerDefinition = {
             type: "integer",
             default: 10,
         },
+        login: {
+            name: "Login credentials",
+            in: "body",
+            description: "The login's required values",
+            required: true,
+            schema: { $ref: "#/definitions/Login" },
+        },
+        newUser: {
+            name: "New User",
+            in: "body",
+            description: "The registration's required values",
+            required: true,
+            schema: { $ref: "#/definitions/NewUser" },
+        },
     },
     responses: {
+        Ok: {
+            description: "The expected, normal response when everything is correct",
+        },
+        Created: {
+            description: "The instance was successfully persisted in the DB.\
+                \ You'll be able to find it in the \"Location\" header",
+        },
+        EmptyResponse: {
+            description: "Empty response because there's nothing to return",
+        },
         ListNotPaginated: {
             description: "Due to performance reasons, the list must be paginated,\
                 \ but you didn't provide the start & size query parameters",
             schema: { $ref: "#/definitions/ApiError" },
-            examples: {
-                "application/json": {
-                    message: "Lists must be paginated with start=<num>&size=<num> query params (use 0 to list all)",
-                },
-            },
         },
-        Ok: {
-            description: "The expected, normal response when everything is correct",
+        Unauthorized: {
+            description: "The endpoint is secured and there's an error with the JWT Token's authentication",
+            schema: { $ref: "#/definitions/ApiError" },
+        },
+        EntityNotFound: {
+            description: "The entity you were looking for doesn't exist or is no longer available",
+            schema: { $ref: "#/definitions/ApiError" },
+        },
+        UnprocessableEntity: {
+            description: "There are errors in the request. Please read the response in order to understand the error",
         },
     },
     securityDefinitions: {
@@ -100,6 +165,10 @@ const swaggerDefinition = {
         Users: {
             name: "Users",
             description: "User's resource operations",
+        },
+        Authentication: {
+            name: "Authentication",
+            description: "Login, register and other security operations",
         },
     },
 }

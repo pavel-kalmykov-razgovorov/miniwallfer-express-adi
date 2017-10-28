@@ -47,10 +47,28 @@ export class UserController {
                         HttpStatus.UNAUTHORIZED,
                         undefined))
         } catch {
-            this.processError(new Error("Unable to parse token"), HttpStatus.UNPROCESSABLE_ENTITY, undefined)
+            this.processError(new Error("Unable to parse token"), HttpStatus.UNAUTHORIZED, undefined)
         }
     }
 
+    /**
+     * @swagger
+     * /login:
+     *     post:
+     *         tags:
+     *             - Authentication
+     *         description: Given a user's credentials, it provides its JWT Token
+     *         operationId: login
+     *         produces:
+     *             - application/json
+     *         parameters:
+     *             - $ref: "#/parameters/login"
+     *         responses:
+     *             200:
+     *                 $ref: "#/responses/Ok"
+     *             422:
+     *                 $ref: "#/responses/UnprocessableEntity"
+     */
     public async login(request: Request, response: Response, next: NextFunction) {
         const username = request.body.username
         const password = request.body.password
@@ -72,24 +90,26 @@ export class UserController {
     /**
      * @swagger
      * /users:
-     *  get:
-     *      tags:
-     *          - Users
-     *      description: Retrieves all the users stored in the DB
-     *      operationId: "getAllUsers"
-     *      produces:
-     *          - application/hal+json
-     *          - application/json
-     *      parameters:
-     *          - $ref: "#/parameters/startParam"
-     *          - $ref: "#/parameters/sizeParam"
-     *      responses:
-     *          400:
-     *              $ref: "#/responses/ListNotPaginated"
-     *          200:
-     *              $ref: "#/responses/Ok"
-     *      security:
-     *          - jwt: []
+     *     get:
+     *         tags:
+     *             - Users
+     *         description: Retrieves all the users stored in the DB
+     *         operationId: "getAllUsers"
+     *         produces:
+     *             - application/hal+json
+     *             - application/json
+     *         parameters:
+     *             - $ref: "#/parameters/startParam"
+     *             - $ref: "#/parameters/sizeParam"
+     *         responses:
+     *             200:
+     *                 $ref: "#/responses/Ok"
+     *             400:
+     *                 $ref: "#/responses/ListNotPaginated"
+     *             401:
+     *                 $ref: "#/responses/Unauthorized"
+     *         security:
+     *             - jwt: []
      */
     public async all(request: Request, response: Response, next: NextFunction) {
         const skip = Number(request.query.start)
@@ -104,6 +124,29 @@ export class UserController {
         return UserHalUtils.getUsersWithNavigationLinks(users, request.path, skip, take)
     }
 
+    /**
+     * @swagger
+     * /users/{id}:
+     *     get:
+     *         tags:
+     *             - Users
+     *         description: Retrieves a single user stored in the DB
+     *         operationId: getUser
+     *         produces:
+     *             - application/hal+json
+     *             - application/json
+     *         parameters:
+     *             - $ref: "#/parameters/id"
+     *         responses:
+     *             200:
+     *                 $ref: "#/responses/Ok"
+     *             401:
+     *                 $ref: "#/responses/Unauthorized"
+     *             404:
+     *                 $ref: "#/responses/EntityNotFound"
+     *         security:
+     *             - jwt: []
+     */
     public async one(request: Request, response: Response, next: NextFunction) {
         const userId: number = request.params.id as number;
         const user = await this.userRepository.findOneById(userId)
@@ -112,6 +155,26 @@ export class UserController {
         return UserHalUtils.getUserWithActionLinks(user)
     }
 
+    /**
+     * @swagger
+     * /users:
+     *     post:
+     *         tags:
+     *             - Users
+     *             - Authentication
+     *         description: Saves (registers) a new user to the DB
+     *         operationId: saveUser
+     *         produces:
+     *             - application/hal+json
+     *             - application/json
+     *         parameters:
+     *             - $ref: "#/parameters/newUser"
+     *         responses:
+     *             201:
+     *                 $ref: "#/responses/Created"
+     *             422:
+     *                 $ref: "#/responses/UnprocessableEntity"
+     */
     public async save(request: Request, response: Response, next: NextFunction) {
         const newUser = request.body
         if (Object.keys(newUser).length === 0 && newUser.constructor === Object) {
@@ -130,6 +193,28 @@ export class UserController {
                 this.processError(error, HttpStatus.UNPROCESSABLE_ENTITY, undefined, newUser.username))
     }
 
+    /**
+     * @swagger
+     * /users/{id}:
+     *     put:
+     *         tags:
+     *             - Users
+     *         description: Updates a selected user and merges it to the DB
+     *         operationId: updateUser
+     *         produces:
+     *             - application/hal+json
+     *             - application/json
+     *         parameters:
+     *             - $ref: "#/parameters/id"
+     *             - $ref: "#/parameters/newUser"
+     *         responses:
+     *             201:
+     *                 $ref: "#/responses/Created"
+     *             401:
+     *                 $ref: "#/responses/Unauthorized"
+     *             422:
+     *                 $ref: "#/responses/UnprocessableEntity"
+     */
     public async update(request: Request, response: Response, next: NextFunction) {
         const userId = request.params.id;
         const modifiedUser = request.body
@@ -147,6 +232,26 @@ export class UserController {
                 this.processError(error, HttpStatus.UNPROCESSABLE_ENTITY, userId, modifiedUser.username))
     }
 
+    /**
+     * @swagger
+     * /users/{id}:
+     *     delete:
+     *         tags:
+     *             - Users
+     *         description: Deletes a selected user from the DB
+     *         operationId: deleteUser
+     *         produces:
+     *             - application/json
+     *         parameters:
+     *             - $ref: "#/parameters/id"
+     *         responses:
+     *             204:
+     *                 $ref: "#/responses/EmptyResponse"
+     *             401:
+     *                 $ref: "#/responses/Unauthorized"
+     *             404:
+     *                 $ref: "#/responses/EntityNotFound"
+     */
     public async remove(request: Request, response: Response, next: NextFunction) {
         const userId = request.params.id
         await this.userRepository.removeById(userId)
