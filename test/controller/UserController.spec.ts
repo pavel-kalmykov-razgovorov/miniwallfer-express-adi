@@ -2,15 +2,11 @@ import * as chai from "chai"
 import chaiHttp = require("chai-http")
 import chaiMatchPattern = require("chai-match-pattern")
 import "chai/register-should"
-import { classToPlain, plainToClass } from "class-transformer"
+import { plainToClass } from "class-transformer"
 import * as HttpStatus from "http-status-codes"
 import * as jwt from "jwt-simple"
-import * as mocha from "mocha"
 import "reflect-metadata"
-import { createConnection, getRepository, Repository } from "typeorm"
-import { SqliteConnectionOptions } from "typeorm/driver/sqlite/SqliteConnectionOptions";
-import * as util from "util"
-import { Post } from "../../src/entity/Post"
+import { Repository } from "typeorm"
 import { User } from "../../src/entity/User"
 import server = require("../../src/server")
 import { getConnection } from "../testConnection"
@@ -22,7 +18,7 @@ chai.use(chaiMatchPattern)
 const should = chai.should()
 const _ = chaiMatchPattern.getLodashModule()
 
-const jwtTestSecret = "putopavel123";
+const jwtTestSecret = "putopavel123"
 
 describe("UserController tests", async () => {
     const exampleUser = plainToClass(User, {
@@ -47,7 +43,7 @@ describe("UserController tests", async () => {
 
     before("Starting server...", async () => {
         await getConnection.then(async (connection) => {
-            await connection.createQueryBuilder().delete().from(User).execute();
+            await connection.createQueryBuilder().delete().from(User).execute()
             testServer = server.createServer()
             userRepository = connection.getRepository(User)
             savedUser = await userRepository.save(exampleUser)
