@@ -41,7 +41,7 @@ const pavelToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpZCI6MSwidXNlcm5hbWU
 // tslint:disable-next-line:max-line-length
 const unexistentUserToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJwYXZlbHRydWZpMiIsInBhc3N3b3JkIjoiJDJhJDA0JDlNZFVZUllqckQ4YkxOZXV0Y2FUcC5VejV4djdRSjVuRlJUdFIvbEdmdGptOXphQWR3RlZTIiwiZmlyc3ROYW1lIjoiUGF2ZWwiLCJsYXN0TmFtZSI6IlJhemdvdm9yb3YiLCJiaXJ0aGRhdGUiOiIxOTk2LTExLTI3VDAwOjAwOjAwLjAwMFoifQ.GB1xIKQye37dJfQNN4q95PzWnt7dTahDSNfUV381yC4"
 
-describe("UserController authentication Test", () => {
+describe("Authentication Tests", () => {
     it("Must throw UNAUTHORIZED if token is not provided", (done) => {
         chai.request(server).get("/users")
             .end((err, res) => {
@@ -103,7 +103,7 @@ describe("UserController authentication Test", () => {
     })
 })
 
-describe("UserController GET all users test", () => {
+describe("UserController::all test", () => {
     it("Must throw BAD REQUEST if there aren't start and size query parameters", (done) => {
         chai.request(server).get("/users")
             .set("Authorization", `Bearer ${pavelToken}`)
@@ -148,7 +148,7 @@ describe("UserController GET all users test", () => {
     })
 })
 
-describe("UserController GET one user test", () => {
+describe("UserController::one test", () => {
     it("Must return NOT FOUND if user's ID doesn't exist", (done) => {
         const unexistentUserId = "one" // It can be a string too...
         chai.request(server).get(`/users/${unexistentUserId}`)
