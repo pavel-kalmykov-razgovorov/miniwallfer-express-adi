@@ -141,15 +141,53 @@ describe("UserController GET all users test", () => {
                 res.should.have.header("content-type", /application\/hal\+json.*/)
                 res.body.should.have.property("_embedded")
                 res.body._embedded.should.be.an("array").that.is.not.empty
-                res.body._embedded[0].should.matchPattern({
-                    id: _.isNumber,
-                    username: _.isString,
-                    password: _.isOmitted, // passwords must not be sent even if they are encrypted
-                    firstName: _.isString,
-                    lastName: _.isString,
-                    birthdate: _.isDateString,
-                })
+                const firstUser = res.body._embedded[0];
+                checkUserSchema(firstUser);
                 done()
             })
     })
 })
+
+describe("UserController GET one user test", () => {
+    it("Must return NOT FOUND if user's ID doesn't exist", (done) => {
+        const unexistentUserId = "one" // It can be a string too...
+        chai.request(server).get(`/users/${unexistentUserId}`)
+            .set("Authorization", `Bearer ${pavelToken}`)
+            .end((err, res) => {
+                should.exist(err)
+                res.should.have.status(HttpStatus.NOT_FOUND)
+                res.should.have.header("content-type", /application\/json.*/)
+                res.body.should.have.property("message", `Cannot find user by the given id: ${unexistentUserId}`)
+                done()
+            })
+    })
+
+    it("Must return the requested user if its ID is given in the URL", (done) => {
+        const userId = 1
+        chai.request(server).get(`/users/${userId}`)
+            .set("Authorization", `Bearer ${pavelToken}`)
+            .end((err, res) => {
+                should.not.exist(err)
+                res.should.have.status(HttpStatus.OK)
+                res.should.have.header("content-type", /application\/hal\+json.*/)
+                res.body.should.have.property("_embedded")
+                checkUserSchema(res.body._embedded)
+                res.body.should.have.nested.property("_links.posts.href")
+                res.body._links.posts.href.should.be.a("string").that.is.eql(`/users/${userId}/posts?start=&size=`)
+                res.body.should.have.nested.property("_links.posts.templated")
+                res.body._links.posts.templated.should.be.a("boolean").that.is.eql(true)
+                done()
+            })
+    })
+})
+
+function checkUserSchema(firstUser: any) {
+    firstUser.should.matchPattern({
+        id: _.isNumber,
+        username: _.isString,
+        password: _.isOmitted,
+        firstName: _.isString,
+        lastName: _.isString,
+        birthdate: _.isDateString,
+    });
+}
