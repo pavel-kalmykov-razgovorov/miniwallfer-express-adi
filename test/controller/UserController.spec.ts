@@ -65,211 +65,205 @@ describe("UserController tests", async () => {
             }
         })
 
-        it("Must throw UNAUTHORIZED if token doesn't have 'Bearer' keyword", (done) => {
-            chai.request(testServer).get("/users")
-                .set("Authorization", pavelToken)
-                .end((err, res) => {
-                    err.should.not.be.null
-                    res.should.have.status(HttpStatus.UNAUTHORIZED)
-                    res.should.have.header("content-type", /application\/json.*/)
-                    res.body.should.have.deep.property("message",
-                        "Malformed Authorization header (must be 'Bearer' + token)")
-                    done()
-                })
+        it("Must throw UNAUTHORIZED if token doesn't have 'Bearer' keyword", async () => {
+            try {
+                await chai.request(testServer).get("/users").set("Authorization", pavelToken)
+            } catch (error) {
+                const res = error.response as ChaiHttp.Response
+                res.should.have.status(HttpStatus.UNAUTHORIZED)
+                res.should.have.header("content-type", /application\/json.*/)
+                res.body.should.have.deep.property("message",
+                    "Malformed Authorization header (must be 'Bearer' + token)")
+            }
         })
 
-        it("Must throw UNAUTHORIZED if token has been manipulated", (done) => {
-            chai.request(testServer).get("/users")
-                .set("Authorization", `Bearer hacked${pavelToken}hacked`)
-                .end((err, res) => {
-                    err.should.not.be.null
-                    res.should.have.status(HttpStatus.UNAUTHORIZED)
-                    res.should.have.header("content-type", /application\/json.*/)
-                    res.body.should.have.deep.property("message", "Unable to parse token")
-                    done()
-                })
+        it("Must throw UNAUTHORIZED if token has been manipulated", async () => {
+            try {
+                await chai.request(testServer).get("/users")
+                    .set("Authorization", `Bearer hacked${pavelToken}hacked`)
+            } catch (error) {
+                const res = error.response as ChaiHttp.Response
+                res.should.have.status(HttpStatus.UNAUTHORIZED)
+                res.should.have.header("content-type", /application\/json.*/)
+                res.body.should.have.deep.property("message", "Unable to parse token")
+            }
         })
 
-        it("Must throw UNAUTHORIZED if token's owner (the user) has been deleted or doesn't exist", (done) => {
-            chai.request(testServer).get("/users")
-                .set("Authorization", `Bearer ${unexistentUserToken}`)
-                .end((err, res) => {
-                    err.should.not.be.null
-                    res.should.have.status(HttpStatus.UNAUTHORIZED)
-                    res.should.have.header("content-type", /application\/json.*/)
-                    res.body.should.have.deep.property("message", "Invalid token. User may have been deleted")
-                    done()
-                })
+        it("Must throw UNAUTHORIZED if token's owner (the user) has been deleted or doesn't exist", async () => {
+            try {
+                await chai.request(testServer).get("/users")
+                    .set("Authorization", `Bearer ${unexistentUserToken}`)
+            } catch (error) {
+                const res = error.response as ChaiHttp.Response
+                res.should.have.status(HttpStatus.UNAUTHORIZED)
+                res.should.have.header("content-type", /application\/json.*/)
+                res.body.should.have.deep.property("message", "Invalid token. User may have been deleted")
+            }
         })
 
-        it("Must return the requested resource if a valid token is provided", (done) => {
-            chai.request(testServer).get("/users")
-                .set("Authorization", `Bearer ${pavelToken}`)
-                .query({ start: 0, size: 1 })
-                .end((err, res) => {
-                    should.not.exist(err)
-                    res.should.have.status(HttpStatus.OK)
-                    res.should.have.header("content-type", /application\/hal\+json.*/)
-                    res.body.should.have.nested.property("_embedded[0].username", "paveltrufi")
-                    done()
-                })
+        it("Must return the requested resource if a valid token is provided", async () => {
+            try {
+                const res = await chai.request(testServer).get("/users")
+                    .set("Authorization", `Bearer ${pavelToken}`)
+                    .query({ start: 0, size: 1 })
+                res.should.have.status(HttpStatus.OK)
+                res.should.have.header("content-type", /application\/hal\+json.*/)
+                res.body.should.have.nested.property("_embedded[0].username", "paveltrufi")
+            } catch (error) { should.fail(error, undefined, "Unexpected exception") }
         })
     })
 
     describe("UserController::all test", () => {
-        it("Must throw BAD REQUEST if there aren't start and size query parameters", (done) => {
-            chai.request(testServer).get("/users")
-                .set("Authorization", `Bearer ${pavelToken}`)
-                .end((err, res) => {
-                    should.exist(err)
-                    res.should.have.status(HttpStatus.BAD_REQUEST)
-                    res.should.have.header("content-type", /application\/json.*/)
-                    res.body.should.have.deep.property("message",
-                        "Lists must be paginated with start=<num>&size=<num> query params (use 0 to list all)")
-                    done()
-                })
+        it("Must throw BAD REQUEST if there aren't start and size query parameters", async () => {
+            try {
+                await chai.request(testServer).get("/users")
+                    .set("Authorization", `Bearer ${pavelToken}`)
+            } catch (error) {
+                const res = error.response as ChaiHttp.Response
+                res.should.have.status(HttpStatus.BAD_REQUEST)
+                res.should.have.header("content-type", /application\/json.*/)
+                res.body.should.have.deep.property("message",
+                    "Lists must be paginated with start=<num>&size=<num> query params (use 0 to list all)")
+            }
         })
 
-        it("Must throw BAD REQUEST if start or size query params have any not-numeric value", (done) => {
-            chai.request(testServer).get("/users")
-                .set("Authorization", `Bearer ${pavelToken}`)
-                .query({ start: "0", size: "A" })
-                .end((err, res) => {
-                    should.exist(err)
-                    res.should.have.status(HttpStatus.BAD_REQUEST)
-                    res.should.have.header("content-type", /application\/json.*/)
-                    res.body.should.have.deep.property("message",
-                        "Lists must be paginated with start=<num>&size=<num> query params (use 0 to list all)")
-                    done()
-                })
+        it("Must throw BAD REQUEST if start or size query params have any not-numeric value", async () => {
+            try {
+                await chai.request(testServer).get("/users")
+                    .set("Authorization", `Bearer ${pavelToken}`)
+                    .query({ start: "0", size: "A" })
+            } catch (error) {
+                const res = error.response as ChaiHttp.Response
+                res.should.have.status(HttpStatus.BAD_REQUEST)
+                res.should.have.header("content-type", /application\/json.*/)
+                res.body.should.have.deep.property("message",
+                    "Lists must be paginated with start=<num>&size=<num> query params (use 0 to list all)")
+            }
         })
 
-        it("Must return a users' list if start or size query params exist but don't have any value", (done) => {
-            chai.request(testServer).get("/users")
-                .set("Authorization", `Bearer ${pavelToken}`)
-                .query({ start: "", size: "" })
-                .end((err, res) => {
-                    should.not.exist(err)
-                    res.should.have.status(HttpStatus.OK)
-                    res.should.have.header("content-type", /application\/hal\+json.*/)
-                    res.body.should.have.property("_embedded")
-                    res.body._embedded.should.be.an("array").that.is.not.empty
-                    const firstUser = res.body._embedded[0]
-                    checkUserSchema(firstUser)
-                    done()
-                })
+        it("Must return a users' list if start or size query params exist but don't have any value", async () => {
+            try {
+                await chai.request(testServer).get("/users")
+                    .set("Authorization", `Bearer ${pavelToken}`)
+                    .query({ start: "", size: "" })
+            } catch (error) {
+                const res = error.response as ChaiHttp.Response
+                res.should.have.status(HttpStatus.OK)
+                res.should.have.header("content-type", /application\/hal\+json.*/)
+                res.body.should.have.property("_embedded")
+                res.body._embedded.should.be.an("array").that.is.not.empty
+                const firstUser = res.body._embedded[0]
+                checkUserSchema(firstUser)
+            }
         })
     })
 
     describe("UserController::one test", () => {
-        it("Must return NOT FOUND if user's ID doesn't exist", (done) => {
+        it("Must return NOT FOUND if user's ID doesn't exist", async () => {
             const unexistentUserId = "one" // It can be a string too...
-            chai.request(testServer).get(`/users/${unexistentUserId}`)
-                .set("Authorization", `Bearer ${pavelToken}`)
-                .end((err, res) => {
-                    should.exist(err)
-                    res.should.have.status(HttpStatus.NOT_FOUND)
-                    res.should.have.header("content-type", /application\/json.*/)
-                    res.body.should.have.deep.property("message",
-                        `Cannot find user by the given id: ${unexistentUserId}`)
-                    done()
-                })
+            try {
+                await chai.request(testServer).get(`/users/${unexistentUserId}`)
+                    .set("Authorization", `Bearer ${pavelToken}`)
+            } catch (error) {
+                const res = error.response as ChaiHttp.Response
+                res.should.have.status(HttpStatus.NOT_FOUND)
+                res.should.have.header("content-type", /application\/json.*/)
+                res.body.should.have.deep.property("message",
+                    `Cannot find user by the given id: ${unexistentUserId}`)
+            }
         })
 
-        it("Must return the requested user if its ID is given in the URL", (done) => {
+        it("Must return the requested user if its ID is given in the URL", async () => {
             const userId = savedUser.id
-            chai.request(testServer).get(`/users/${userId}`)
-                .set("Authorization", `Bearer ${pavelToken}`)
-                .end((err, res) => {
-                    should.not.exist(err)
-                    res.should.have.status(HttpStatus.OK)
-                    res.should.have.header("content-type", /application\/hal\+json.*/)
-                    res.body.should.have.property("_embedded")
-                    checkUserSchema(res.body._embedded)
-                    res.body.should.have.nested.property("_links.posts.href")
-                    res.body._links.posts.href.should.be.a("string")
-                        .that.is.eql(`/users/${userId}/posts?start=&size=`)
-                    res.body.should.have.nested.property("_links.posts.templated")
-                    res.body._links.posts.templated.should.be.a("boolean").that.is.eql(true)
-                    done()
-                })
+            try {
+                const res = await chai.request(testServer).get(`/users/${userId}`)
+                    .set("Authorization", `Bearer ${pavelToken}`)
+                res.should.have.status(HttpStatus.OK)
+                res.should.have.header("content-type", /application\/hal\+json.*/)
+                res.body.should.have.property("_embedded")
+                checkUserSchema(res.body._embedded)
+                res.body.should.have.nested.property("_links.posts.href")
+                res.body._links.posts.href.should.be.a("string")
+                    .that.is.eql(`/users/${userId}/posts?start=&size=`)
+                res.body.should.have.nested.property("_links.posts.templated")
+                res.body._links.posts.templated.should.be.a("boolean").that.is.eql(true)
+            } catch (error) { should.fail(error, undefined, "Unexpected exception") }
         })
     })
 
     describe("UserController::save test", () => {
-        it("Should throw UNPROCESSABLE ENTITY if no User is passed in the request", (done) => {
-            chai.request(testServer).post("/users")
-                .end((err, res) => {
-                    should.exist(err)
-                    res.should.have.status(HttpStatus.UNPROCESSABLE_ENTITY)
-                    res.should.have.header("content-type", /application\/json.*/)
-                    res.body.should.have.deep.property("message", "Empty user data")
-                    done()
-                })
+        it("Should throw UNPROCESSABLE ENTITY if no User is passed in the request", async () => {
+            try {
+                await chai.request(testServer).post("/users")
+            } catch (error) {
+                const res = error.response as ChaiHttp.Response
+                res.should.have.status(HttpStatus.UNPROCESSABLE_ENTITY)
+                res.should.have.header("content-type", /application\/json.*/)
+                res.body.should.have.deep.property("message", "Empty user data")
+            }
         })
 
-        it("Should throw UNPROCESSABLE ENTITY if an invalid or incomplete user is sent", (done) => {
-            chai.request(testServer).post("/users")
-                .send({ username: "1234", password: "pass" })
-                .end((err, res) => {
-                    should.exist(err)
-                    res.should.have.status(HttpStatus.UNPROCESSABLE_ENTITY)
-                    res.should.have.header("content-type", /application\/json.*/)
-                    res.body.should.have.deep.property("message", [{
-                        value: "1234",
-                        property: "username",
-                        children: [],
-                        constraints: {
-                            matches: "Username must be a valid nickname with a lenght between 8 and 20 characters",
-                        },
-                    }, {
-                        value: "pass",
-                        property: "password",
-                        children: [],
-                        constraints: { length: "password must be longer than 8 characters" },
-                    }, {
-                        property: "firstName",
-                        children: [],
-                        constraints: {
-                            matches: "First name must be a valid name (no numbers, no special characters)",
-                            isNotEmpty: "firstName should not be empty",
-                        },
-                    }, {
-                        property: "lastName",
-                        children: [],
-                        constraints: {
-                            matches: "Last name must be a valid name (no numbers, no special characters)",
-                            isNotEmpty: "lastName should not be empty",
-                        },
-                    }, {
-                        property: "birthdate",
-                        children: [],
-                        constraints: {
-                            isDate: "birthdate must be a Date instance",
-                            isNotEmpty: "birthdate should not be empty",
-                        },
-                    }])
-                    done()
-                })
+        it("Should throw UNPROCESSABLE ENTITY if an invalid or incomplete user is sent", async () => {
+            try {
+                await chai.request(testServer).post("/users")
+                    .send({ username: "1234", password: "pass" })
+            } catch (error) {
+                const res = error.response as ChaiHttp.Response
+                res.should.have.status(HttpStatus.UNPROCESSABLE_ENTITY)
+                res.should.have.header("content-type", /application\/json.*/)
+                res.body.should.have.deep.property("message", [{
+                    value: "1234",
+                    property: "username",
+                    children: [],
+                    constraints: {
+                        matches: "Username must be a valid nickname with a lenght between 8 and 20 characters",
+                    },
+                }, {
+                    value: "pass",
+                    property: "password",
+                    children: [],
+                    constraints: { length: "password must be longer than 8 characters" },
+                }, {
+                    property: "firstName",
+                    children: [],
+                    constraints: {
+                        matches: "First name must be a valid name (no numbers, no special characters)",
+                        isNotEmpty: "firstName should not be empty",
+                    },
+                }, {
+                    property: "lastName",
+                    children: [],
+                    constraints: {
+                        matches: "Last name must be a valid name (no numbers, no special characters)",
+                        isNotEmpty: "lastName should not be empty",
+                    },
+                }, {
+                    property: "birthdate",
+                    children: [],
+                    constraints: {
+                        isDate: "birthdate must be a Date instance",
+                        isNotEmpty: "birthdate should not be empty",
+                    },
+                }])
+            }
         })
 
-        it("Should throw UNPROCESSABLE ENTITY if the username is already taken", (done) => {
-            const alreadyTakenUsername = "paveltrufi"
-            chai.request(testServer).post("/users")
-                .send({
-                    username: alreadyTakenUsername,
-                    password: "password",
-                    firstName: "Pavel",
-                    lastName: "Razgovorov",
-                    birthdate: "1996-11-27",
-                })
-                .end((err, res) => {
-                    should.exist(err)
-                    res.should.have.status(HttpStatus.UNPROCESSABLE_ENTITY)
-                    res.should.have.header("content-type", /application\/json.*/)
-                    res.body.should.have.deep.property("message", `Username ${alreadyTakenUsername} already taken`)
-                    done()
-                })
+        it("Should throw UNPROCESSABLE ENTITY if the username is already taken", async () => {
+            try {
+                await chai.request(testServer).post("/users")
+                    .send({
+                        username: savedUser.username,
+                        password: "12345678",
+                        firstName: "Already",
+                        lastName: "Taken",
+                        birthdate: "1999-12-31",
+                    })
+            } catch (error) {
+                const res = error.response as ChaiHttp.Response
+                res.should.have.status(HttpStatus.UNPROCESSABLE_ENTITY)
+                res.should.have.header("content-type", /application\/json.*/)
+                res.body.should.have.deep.property("message", `Username ${savedUser.username} already taken`)
+            }
         })
     })
 })

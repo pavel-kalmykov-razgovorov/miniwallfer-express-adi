@@ -84,6 +84,6 @@ export function createServer() {
         const bind = (typeof addr === "string") ? `pipe ${addr}` : `port ${addr.port}`
         debug(`Listening on ${bind}`)
     }
-    console.log(`Express started on port ${port}`)
+    if (process.env.NODE_ENV !== "test") console.log(`Express started on port ${port}`)
     return app
 }
