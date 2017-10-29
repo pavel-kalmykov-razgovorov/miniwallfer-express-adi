@@ -35,6 +35,40 @@ describe("UserController tests", async () => {
         lastName: "ihavenosurname",
         birthdate: "1970-01-01",
     })
+    const userAssertionErrors = [{
+        value: "1234",
+        property: "username",
+        children: [],
+        constraints: {
+            matches: "Username must be a valid nickname with a lenght between 8 and 20 characters",
+        },
+    }, {
+        value: "pass",
+        property: "password",
+        children: [],
+        constraints: { length: "password must be longer than 8 characters" },
+    }, {
+        property: "firstName",
+        children: [],
+        constraints: {
+            matches: "First name must be a valid name (no numbers, no special characters)",
+            isNotEmpty: "firstName should not be empty",
+        },
+    }, {
+        property: "lastName",
+        children: [],
+        constraints: {
+            matches: "Last name must be a valid name (no numbers, no special characters)",
+            isNotEmpty: "lastName should not be empty",
+        },
+    }, {
+        property: "birthdate",
+        children: [],
+        constraints: {
+            isDate: "birthdate must be a Date instance",
+            isNotEmpty: "birthdate should not be empty",
+        },
+    }]
     let testConnection = null
     let testServer = null
     let testUserRepository: Repository<User> = null
@@ -42,20 +76,24 @@ describe("UserController tests", async () => {
     let pavelToken = null
     let unexistentUserToken = null
 
-    before("Starting server...", async () => {
+    before("Starting testing server...", async () => {
         await getConnection.then(async (connection) => {
             testConnection = connection
-            await connection.createQueryBuilder().delete().from(User).execute()
             testServer = server.createServer()
-            testUserRepository = connection.getRepository(User)
+            testUserRepository = testConnection.getRepository(User)
+            await testConnection.createQueryBuilder().delete().from(User).execute()
             testSavedUser = await testUserRepository.save(exampleUser)
             unexistentUserToken = jwt.encode(unexistentUser, jwtTestSecret)
             pavelToken = jwt.encode(testSavedUser, jwtTestSecret)
-            // We delete the database to make sure whe're running a clean environment
         }).catch((error) => console.log(error))
     })
 
-    describe("Authentication Tests", () => {
+    beforeEach("Cleaning database...", async () => {
+        await testConnection.createQueryBuilder().delete().from(User).execute()
+        testSavedUser = await testUserRepository.save(exampleUser)
+    })
+
+    describe("Authentication tests", () => {
         it("Must throw UNAUTHORIZED if token is not provided", async () => {
             try {
                 await chai.request(testServer).get("/users")
@@ -69,7 +107,7 @@ describe("UserController tests", async () => {
 
         it("Must throw UNAUTHORIZED if token doesn't have 'Bearer' keyword", async () => {
             try {
-                await chai.request(testServer).get("/users").set("Authorization", pavelToken)
+                await chai.request(testServer).get("/users").set("authorization", pavelToken)
             } catch (error) {
                 const res = error.response as ChaiHttp.Response
                 res.should.have.status(HttpStatus.UNAUTHORIZED)
@@ -82,7 +120,7 @@ describe("UserController tests", async () => {
         it("Must throw UNAUTHORIZED if token has been manipulated", async () => {
             try {
                 await chai.request(testServer).get("/users")
-                    .set("Authorization", `Bearer hacked${pavelToken}hacked`)
+                    .set("authorization", `Bearer hacked${pavelToken}hacked`)
             } catch (error) {
                 const res = error.response as ChaiHttp.Response
                 res.should.have.status(HttpStatus.UNAUTHORIZED)
@@ -94,7 +132,7 @@ describe("UserController tests", async () => {
         it("Must throw UNAUTHORIZED if token's owner (the user) has been deleted or doesn't exist", async () => {
             try {
                 await chai.request(testServer).get("/users")
-                    .set("Authorization", `Bearer ${unexistentUserToken}`)
+                    .set("authorization", `Bearer ${unexistentUserToken}`)
             } catch (error) {
                 const res = error.response as ChaiHttp.Response
                 res.should.have.status(HttpStatus.UNAUTHORIZED)
@@ -105,7 +143,7 @@ describe("UserController tests", async () => {
 
         it("Must return the requested resource if a valid token is provided", async () => {
             const res = await chai.request(testServer).get("/users")
-                .set("Authorization", `Bearer ${pavelToken}`)
+                .set("authorization", `Bearer ${pavelToken}`)
                 .query({ start: 0, size: 1 })
             res.should.have.status(HttpStatus.OK)
             res.should.have.header("content-type", /application\/hal\+json.*/)
@@ -113,11 +151,11 @@ describe("UserController tests", async () => {
         })
     })
 
-    describe("UserController::all test", () => {
+    describe("UserController::all tests", () => {
         it("Must throw BAD REQUEST if there aren't start and size query parameters", async () => {
             try {
                 await chai.request(testServer).get("/users")
-                    .set("Authorization", `Bearer ${pavelToken}`)
+                    .set("authorization", `Bearer ${pavelToken}`)
             } catch (error) {
                 const res = error.response as ChaiHttp.Response
                 res.should.have.status(HttpStatus.BAD_REQUEST)
@@ -130,7 +168,7 @@ describe("UserController tests", async () => {
         it("Must throw BAD REQUEST if start or size query params have any not-numeric value", async () => {
             try {
                 await chai.request(testServer).get("/users")
-                    .set("Authorization", `Bearer ${pavelToken}`)
+                    .set("authorization", `Bearer ${pavelToken}`)
                     .query({ start: "0", size: "A" })
             } catch (error) {
                 const res = error.response as ChaiHttp.Response
@@ -144,7 +182,7 @@ describe("UserController tests", async () => {
         it("Must return a users' list if start or size query params exist but don't have any value", async () => {
             try {
                 await chai.request(testServer).get("/users")
-                    .set("Authorization", `Bearer ${pavelToken}`)
+                    .set("authorization", `Bearer ${pavelToken}`)
                     .query({ start: "", size: "" })
             } catch (error) {
                 const res = error.response as ChaiHttp.Response
@@ -158,12 +196,12 @@ describe("UserController tests", async () => {
         })
     })
 
-    describe("UserController::one test", () => {
+    describe("UserController::one tests", () => {
         it("Must return NOT FOUND if user's ID doesn't exist", async () => {
             const unexistentUserId = "one" // It can be a string too...
             try {
                 await chai.request(testServer).get(`/users/${unexistentUserId}`)
-                    .set("Authorization", `Bearer ${pavelToken}`)
+                    .set("authorization", `Bearer ${pavelToken}`)
             } catch (error) {
                 const res = error.response as ChaiHttp.Response
                 res.should.have.status(HttpStatus.NOT_FOUND)
@@ -176,7 +214,7 @@ describe("UserController tests", async () => {
         it("Must return the requested user if its ID is given in the URL", async () => {
             const userId = testSavedUser.id
             const res = await chai.request(testServer).get(`/users/${userId}`)
-                .set("Authorization", `Bearer ${pavelToken}`)
+                .set("authorization", `Bearer ${pavelToken}`)
             res.should.have.status(HttpStatus.OK)
             res.should.have.header("content-type", /application\/hal\+json.*/)
             res.body.should.have.property("_embedded")
@@ -189,10 +227,12 @@ describe("UserController tests", async () => {
         })
     })
 
-    describe("UserController::save test", () => {
+    describe("UserController::save tests", () => {
         it("Should throw UNPROCESSABLE ENTITY if no User is passed in the request", async () => {
             try {
-                await chai.request(testServer).post("/users")
+                await chai.request(testServer)
+                    .post("/users")
+                    .set("content-type", "application/json")
             } catch (error) {
                 const res = error.response as ChaiHttp.Response
                 res.should.have.status(HttpStatus.UNPROCESSABLE_ENTITY)
@@ -203,52 +243,23 @@ describe("UserController tests", async () => {
 
         it("Should throw UNPROCESSABLE ENTITY if an invalid or incomplete user is sent", async () => {
             try {
-                await chai.request(testServer).post("/users")
+                await chai.request(testServer)
+                    .post("/users")
+                    .set("content-type", "application/json")
                     .send({ username: "1234", password: "pass" })
             } catch (error) {
                 const res = error.response as ChaiHttp.Response
                 res.should.have.status(HttpStatus.UNPROCESSABLE_ENTITY)
                 res.should.have.header("content-type", /application\/json.*/)
-                res.body.should.have.deep.property("message", [{
-                    value: "1234",
-                    property: "username",
-                    children: [],
-                    constraints: {
-                        matches: "Username must be a valid nickname with a lenght between 8 and 20 characters",
-                    },
-                }, {
-                    value: "pass",
-                    property: "password",
-                    children: [],
-                    constraints: { length: "password must be longer than 8 characters" },
-                }, {
-                    property: "firstName",
-                    children: [],
-                    constraints: {
-                        matches: "First name must be a valid name (no numbers, no special characters)",
-                        isNotEmpty: "firstName should not be empty",
-                    },
-                }, {
-                    property: "lastName",
-                    children: [],
-                    constraints: {
-                        matches: "Last name must be a valid name (no numbers, no special characters)",
-                        isNotEmpty: "lastName should not be empty",
-                    },
-                }, {
-                    property: "birthdate",
-                    children: [],
-                    constraints: {
-                        isDate: "birthdate must be a Date instance",
-                        isNotEmpty: "birthdate should not be empty",
-                    },
-                }])
+                res.body.should.have.deep.property("message", userAssertionErrors)
             }
         })
 
         it("Should throw UNPROCESSABLE ENTITY if the username is already taken", async () => {
             try {
-                await chai.request(testServer).post("/users")
+                await chai.request(testServer)
+                    .post("/users")
+                    .set("content-type", "application/json")
                     .send({
                         username: testSavedUser.username,
                         password: "12345678",
@@ -272,7 +283,10 @@ describe("UserController tests", async () => {
                 lastName: "Ok",
                 birthdate: "1999-12-31",
             })
-            const res = await chai.request(testServer).post("/users").send(user)
+            const res = await chai.request(testServer)
+                .post("/users")
+                .set("content-type", "application/json")
+                .send(user)
             res.should.have.status(HttpStatus.CREATED)
             res.body.should.have.property("_embedded")
             const savedUser = plainToClass(User, res.body._embedded as object)
@@ -285,6 +299,53 @@ describe("UserController tests", async () => {
             savedUser.should.be.eql(user)
         })
     })
+
+    // FIXME
+    // describe("UserController::update tests", () => {
+    //     it("Should throw UNPROCESSABLE ENTITY if no User is passed in the request", async () => {
+    //         try {
+    //             await chai.request(testServer)
+    //                 .put(`/users/${testSavedUser.id}`)
+    //                 .set("content-type", "application/json")
+    //                 .set("authorization", `Bearer ${pavelToken}`)
+    //             } catch (error) {
+    //                 const res = error.response as ChaiHttp.Response
+    //                 res.should.have.status(HttpStatus.UNPROCESSABLE_ENTITY)
+    //                 res.should.have.header("content-type", /application\/json.*/)
+    //                 res.body.should.have.deep.property("message", "Empty user data")
+    //             }
+    //     })
+
+    //     it("Should throw UNPROCESSABLE ENTITY if an invalid or incomplete user is sent", async () => {
+    //         try {
+    //             await chai.request(testServer)
+    //                 .put(`/users/${testSavedUser.id}`)
+    //                 .set("content-type", "application/json")
+    //                 .set("authorization", `Bearer ${pavelToken}`)
+    //                 .send({ username: "1234", password: "pass" })
+    //         } catch (error) {
+    //             const res = error.response as ChaiHttp.Response
+    //             res.should.have.status(HttpStatus.UNPROCESSABLE_ENTITY)
+    //             res.should.have.header("content-type", /application\/json.*/)
+    //             res.body.should.have.deep.property("message", userAssertionErrors)
+    //         }
+    //     })
+
+    //     it("Should throw UNPROCESSABLE ENTITY if the username is already taken", async () => {
+    //         try {
+    //             await chai.request(testServer)
+    //                 .put(`/users/${testSavedUser.id}`)
+    //                 .set("content-type", "application/json")
+    //                 .set("authorization", `Bearer ${pavelToken}`)
+    //                 .send(testSavedUser)
+    //         } catch (error) {
+    //             const res = error.response as ChaiHttp.Response
+    //             res.should.have.status(HttpStatus.UNPROCESSABLE_ENTITY)
+    //             res.should.have.header("content-type", /application\/json.*/)
+    //             res.body.should.have.deep.property("message", `Username ${testSavedUser.username} already taken`)
+    //         }
+    //     })
+    // })
 })
 
 function checkUserSchema(firstUser: any) {
