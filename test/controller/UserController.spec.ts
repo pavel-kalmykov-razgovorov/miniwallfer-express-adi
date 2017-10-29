@@ -391,8 +391,8 @@ describe("UserController tests", async () => {
     })
 })
 
-function checkUserSchema(firstUser: any) {
-    firstUser.should.matchPattern({
+function checkUserSchema(user: any) {
+    user.should.matchPattern({
         id: _.isNumber,
         username: _.isString,
         password: _.isOmitted,
