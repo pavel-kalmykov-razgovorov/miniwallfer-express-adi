@@ -47,7 +47,7 @@ const persistentServer = createConnection().then((connection) => {
 
     function configureExpress(): void {
         app.set("port", port)
-        app.use(logger("dev"))
+        if (process.env.NODE_ENV !== "test") app.use(logger("dev"))
         app.use(bodyParser.json())
         app.use(bodyParser.urlencoded({ extended: false }))
         server.listen(port)

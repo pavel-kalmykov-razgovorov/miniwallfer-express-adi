@@ -11,6 +11,8 @@ import { Post } from "../../src/entity/Post"
 import { User } from "../../src/entity/User"
 import * as app from "../../src/index"
 
+process.env.NODE_ENV = "test";
+
 chai.use(chaiHttp)
 chai.use(chaiMatchPattern)
 const should = chai.should()
