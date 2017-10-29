@@ -30,10 +30,11 @@ export class UserController {
                 undefined)
         }
         try {
-            const decodedUser = jwt.decode(authorizationParts[1], UserController.secret)
+            const decodedUser = plainToClass(User, jwt.decode(authorizationParts[1], UserController.secret) as User)
             return this.userRepository.findOneById(decodedUser.id)
-                .then((foundUser) => {
-                    if (!foundUser) {
+            .then((foundUser) => {
+                    // The equality condition is evaluated in case a manipulated token's user has another user's ID
+                    if (!foundUser || !foundUser.equals(decodedUser)) {
                         this.processError(
                             new Error("Token's user not found (it may have been deleted)"),
                             HttpStatus.UNAUTHORIZED,

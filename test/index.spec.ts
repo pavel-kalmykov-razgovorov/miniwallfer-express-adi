@@ -26,6 +26,8 @@ describe("Index test", () => {
                 res.text.should.not.be.null
                     .and.include("swagger")
                     .and.include("pr18@alu.ua.es")
+            }).catch((err) => {
+                expect.fail("Failed with error:" + err)
             })
     })
 

@@ -52,4 +52,14 @@ export class User {
 
     @OneToMany((type) => Post, (post: Post) => post.user)
     public posts: Post[]
+
+    public equals(that: User): boolean {
+        return this === that ? true
+            : this.id === that.id
+            && this.username === that.username
+            && this.password === that.password
+            && this.firstName === that.firstName
+            && this.lastName === that.lastName
+            && this.birthdate.toDateString() === that.birthdate.toDateString()
+    }
 }
