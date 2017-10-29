@@ -35,20 +35,22 @@ describe("UserController tests", async () => {
         lastName: "ihavenosurname",
         birthdate: "1970-01-01",
     })
+    let testConnection = null
     let testServer = null
-    let userRepository: Repository<User> = null
-    let savedUser = null
+    let testUserRepository: Repository<User> = null
+    let testSavedUser = null
     let pavelToken = null
     let unexistentUserToken = null
 
     before("Starting server...", async () => {
         await getConnection.then(async (connection) => {
+            testConnection = connection
             await connection.createQueryBuilder().delete().from(User).execute()
             testServer = server.createServer()
-            userRepository = connection.getRepository(User)
-            savedUser = await userRepository.save(exampleUser)
+            testUserRepository = connection.getRepository(User)
+            testSavedUser = await testUserRepository.save(exampleUser)
             unexistentUserToken = jwt.encode(unexistentUser, jwtTestSecret)
-            pavelToken = jwt.encode(savedUser, jwtTestSecret)
+            pavelToken = jwt.encode(testSavedUser, jwtTestSecret)
             // We delete the database to make sure whe're running a clean environment
         }).catch((error) => console.log(error))
     })
@@ -102,14 +104,12 @@ describe("UserController tests", async () => {
         })
 
         it("Must return the requested resource if a valid token is provided", async () => {
-            try {
-                const res = await chai.request(testServer).get("/users")
-                    .set("Authorization", `Bearer ${pavelToken}`)
-                    .query({ start: 0, size: 1 })
-                res.should.have.status(HttpStatus.OK)
-                res.should.have.header("content-type", /application\/hal\+json.*/)
-                res.body.should.have.nested.property("_embedded[0].username", "paveltrufi")
-            } catch (error) { should.fail(error, undefined, "Unexpected exception") }
+            const res = await chai.request(testServer).get("/users")
+                .set("Authorization", `Bearer ${pavelToken}`)
+                .query({ start: 0, size: 1 })
+            res.should.have.status(HttpStatus.OK)
+            res.should.have.header("content-type", /application\/hal\+json.*/)
+            res.body.should.have.nested.property("_embedded[0].username", "paveltrufi")
         })
     })
 
@@ -174,20 +174,18 @@ describe("UserController tests", async () => {
         })
 
         it("Must return the requested user if its ID is given in the URL", async () => {
-            const userId = savedUser.id
-            try {
-                const res = await chai.request(testServer).get(`/users/${userId}`)
-                    .set("Authorization", `Bearer ${pavelToken}`)
-                res.should.have.status(HttpStatus.OK)
-                res.should.have.header("content-type", /application\/hal\+json.*/)
-                res.body.should.have.property("_embedded")
-                checkUserSchema(res.body._embedded)
-                res.body.should.have.nested.property("_links.posts.href")
-                res.body._links.posts.href.should.be.a("string")
-                    .that.is.eql(`/users/${userId}/posts?start=&size=`)
-                res.body.should.have.nested.property("_links.posts.templated")
-                res.body._links.posts.templated.should.be.a("boolean").that.is.eql(true)
-            } catch (error) { should.fail(error, undefined, "Unexpected exception") }
+            const userId = testSavedUser.id
+            const res = await chai.request(testServer).get(`/users/${userId}`)
+                .set("Authorization", `Bearer ${pavelToken}`)
+            res.should.have.status(HttpStatus.OK)
+            res.should.have.header("content-type", /application\/hal\+json.*/)
+            res.body.should.have.property("_embedded")
+            checkUserSchema(res.body._embedded)
+            res.body.should.have.nested.property("_links.posts.href")
+            res.body._links.posts.href.should.be.a("string")
+                .that.is.eql(`/users/${userId}/posts?start=&size=`)
+            res.body.should.have.nested.property("_links.posts.templated")
+            res.body._links.posts.templated.should.be.a("boolean").that.is.eql(true)
         })
     })
 
@@ -252,7 +250,7 @@ describe("UserController tests", async () => {
             try {
                 await chai.request(testServer).post("/users")
                     .send({
-                        username: savedUser.username,
+                        username: testSavedUser.username,
                         password: "12345678",
                         firstName: "Already",
                         lastName: "Taken",
@@ -262,8 +260,29 @@ describe("UserController tests", async () => {
                 const res = error.response as ChaiHttp.Response
                 res.should.have.status(HttpStatus.UNPROCESSABLE_ENTITY)
                 res.should.have.header("content-type", /application\/json.*/)
-                res.body.should.have.deep.property("message", `Username ${savedUser.username} already taken`)
+                res.body.should.have.deep.property("message", `Username ${testSavedUser.username} already taken`)
             }
+        })
+
+        it("Should save the user in the DB if every field is correct", async () => {
+            const user = plainToClass(User, {
+                username: "everythingok",
+                password: "3v3ryth1ng0k",
+                firstName: "Everything",
+                lastName: "Ok",
+                birthdate: "1999-12-31",
+            })
+            const res = await chai.request(testServer).post("/users").send(user)
+            res.should.have.status(HttpStatus.CREATED)
+            res.body.should.have.property("_embedded")
+            const savedUser = plainToClass(User, res.body._embedded as object)
+            // We make sure the saved user is in the DB
+            const count = await testUserRepository.count({ where: { username: savedUser.username } })
+            count.should.be.eql(1)
+            // We equalize missing properties from one to another object and check everyting was saved properly
+            user.id = savedUser.id
+            savedUser.password = user.password
+            savedUser.should.be.eql(user)
         })
     })
 })
