@@ -20,7 +20,7 @@ export class User {
     @Index()
     @IsNotEmpty()
     @Matches(/^[a-z\d](?:[a-z\d]|-(?=[a-z\d])){8,20}$/i, {
-        message: "Username must be a valid string",
+        message: "Username must be a valid nickname with a lenght between 8 and 20 characters",
     })
     public username: string
 
