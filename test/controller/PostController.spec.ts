@@ -7,7 +7,7 @@ import * as HttpStatus from "http-status-codes"
 import * as jwt from "jwt-simple"
 import "reflect-metadata"
 import { Repository } from "typeorm"
-import { Post } from "../../src/entity/Post";
+import { Post } from "../../src/entity/Post"
 import { User } from "../../src/entity/User"
 import server = require("../../src/server")
 import { getConnection } from "../testConnection"
@@ -109,6 +109,49 @@ describe("PostController tests", () => {
                 const firstUser = res.body._embedded[0]
                 checkPostSchema(firstUser)
             }
+        })
+    })
+
+    describe("PostController::one tests", () => {
+        it("Must return NOT FOUND if post's ID doesn't exist", async () => {
+            const unexistentUserId = -1
+            try {
+                await chai.request(testServer).get(`/posts/${unexistentUserId}`)
+                    .set("authorization", `Bearer ${pavelToken}`)
+            } catch (error) {
+                const res = error.response as ChaiHttp.Response
+                res.should.have.status(HttpStatus.NOT_FOUND)
+                res.should.have.header("content-type", /application\/json.*/)
+                res.body.should.have.deep.property("message",
+                    `Cannot find post by the given id: ${unexistentUserId}`)
+            }
+        })
+
+        it("Must return NOT FOUND if post's ID isn't numeric", async () => {
+            const unexistentUserId = "one"
+            try {
+                await chai.request(testServer).get(`/posts/${unexistentUserId}`)
+                    .set("authorization", `Bearer ${pavelToken}`)
+            } catch (error) {
+                const res = error.response as ChaiHttp.Response
+                res.should.have.status(HttpStatus.BAD_REQUEST)
+                res.should.have.header("content-type", /application\/json.*/)
+                res.body.should.have.deep.property("message", "Post's ID not present in URL")
+            }
+        })
+
+        it("Must return the requested post if its ID is given in the URL", async () => {
+            const postId = testSavedPost.id
+            const res = await chai.request(testServer).get(`/posts/${postId}`)
+                .set("authorization", `Bearer ${pavelToken}`)
+            res.should.have.status(HttpStatus.OK)
+            res.should.have.header("content-type", /application\/hal\+json.*/)
+            res.body.should.have.property("_embedded")
+            const post = res.body._embedded
+            checkPostSchema(post)
+            res.body.should.have.nested.property("_links.user.href")
+            res.body._links.user.href.should.be.a("string")
+                .that.is.eql(`/users/${post.user._embedded.id}`)
         })
     })
 })
