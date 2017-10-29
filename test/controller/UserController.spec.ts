@@ -11,7 +11,7 @@ import { User } from "../../src/entity/User"
 import * as app from "../../src/index"
 
 chai.use(chaiHttp)
-const expect = chai.expect
+const should = chai.should()
 
 let server = null
 async function initServer() {
@@ -35,25 +35,14 @@ before("Starting server...", initServer)
 const pavelToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJwYXZlbHRydWZpIiwicGFzc3dvcmQiOiIkMmEkMDQkUUljUExGd2NIMWFvTzQxMkguWGxZLlUuSEUzQ041ZnZHMEx1WXNya1NTTEtNVHJlaFlILjYiLCJmaXJzdE5hbWUiOiJQYXZlbCIsImxhc3ROYW1lIjoiUmF6Z292b3JvdiIsImJpcnRoZGF0ZSI6IjE5OTYtMTEtMjdUMDA6MDA6MDAuMDAwWiJ9.Ye4hwVzKTmyyIz6JIvxdI4zF9teQmFA7DjxsHurUxPs"
 // tslint:disable-next-line:max-line-length
 const unexistentUserToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJwYXZlbHRydWZpMiIsInBhc3N3b3JkIjoiJDJhJDA0JDlNZFVZUllqckQ4YkxOZXV0Y2FUcC5VejV4djdRSjVuRlJUdFIvbEdmdGptOXphQWR3RlZTIiwiZmlyc3ROYW1lIjoiUGF2ZWwiLCJsYXN0TmFtZSI6IlJhemdvdm9yb3YiLCJiaXJ0aGRhdGUiOiIxOTk2LTExLTI3VDAwOjAwOjAwLjAwMFoifQ.GB1xIKQye37dJfQNN4q95PzWnt7dTahDSNfUV381yC4"
+
 describe("UserController authentication Test", () => {
-
     it("Must throw UNAUTHORIZED if token is not provided", (done) => {
         chai.request(server).get("/users")
             .end((err, res) => {
                 err.should.not.be.null
-                res.status.should.be.eql(HttpStatus.UNAUTHORIZED)
-                res.body.message.should.be.eql("Authorization header must be provided")
-                done()
-            })
-    })
-
-    it("Must throw UNAUTHORIZED if token is not provided", (done) => {
-        chai.request(server).get("/users")
-            .set("Authorization", pavelToken)
-            .end((err, res) => {
-                err.should.not.be.null
-                res.status.should.be.eql(HttpStatus.UNAUTHORIZED)
-                res.body.message.should.be.eql("Malformed Authorization header (must be 'Bearer' + token)")
+                res.should.have.status(HttpStatus.UNAUTHORIZED)
+                res.body.should.have.deep.property("message", "Authorization header must be provided")
                 done()
             })
     })
@@ -63,8 +52,9 @@ describe("UserController authentication Test", () => {
             .set("Authorization", pavelToken)
             .end((err, res) => {
                 err.should.not.be.null
-                res.status.should.be.eql(HttpStatus.UNAUTHORIZED)
-                res.body.message.should.be.eql("Malformed Authorization header (must be 'Bearer' + token)")
+                res.should.have.status(HttpStatus.UNAUTHORIZED)
+                res.body.should.have.deep.property("message",
+                    "Malformed Authorization header (must be 'Bearer' + token)")
                 done()
             })
     })
@@ -74,8 +64,8 @@ describe("UserController authentication Test", () => {
             .set("Authorization", `Bearer hacked${pavelToken}hacked`)
             .end((err, res) => {
                 err.should.not.be.null
-                res.status.should.be.eql(HttpStatus.UNAUTHORIZED)
-                res.body.message.should.be.eql("Unable to parse token")
+                res.should.have.status(HttpStatus.UNAUTHORIZED)
+                res.body.should.have.deep.property("message", "Unable to parse token")
                 done()
             })
     })
@@ -85,8 +75,8 @@ describe("UserController authentication Test", () => {
             .set("Authorization", `Bearer ${unexistentUserToken}`)
             .end((err, res) => {
                 err.should.not.be.null
-                res.status.should.be.eql(HttpStatus.UNAUTHORIZED)
-                res.body.message.should.be.eql("Invalid token. User may have been deleted")
+                res.should.have.status(HttpStatus.UNAUTHORIZED)
+                res.body.should.have.deep.property("message", "Invalid token. User may have been deleted")
                 done()
             })
     })
@@ -95,9 +85,9 @@ describe("UserController authentication Test", () => {
         chai.request(server).get("/users/1")
             .set("Authorization", `Bearer ${pavelToken}`)
             .end((err, res) => {
-                expect(err).to.be.null
-                res.status.should.be.eql(HttpStatus.OK)
-                res.body._embedded.username.should.be.eql("paveltrufi")
+                should.not.exist(err)
+                res.should.have.status(HttpStatus.OK)
+                res.body.should.have.nested.property("_embedded.username", "paveltrufi")
                 done()
             })
     })
