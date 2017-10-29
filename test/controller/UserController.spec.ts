@@ -47,6 +47,7 @@ describe("UserController authentication Test", () => {
             .end((err, res) => {
                 err.should.not.be.null
                 res.should.have.status(HttpStatus.UNAUTHORIZED)
+                res.should.have.header("content-type", /application\/json.*/)
                 res.body.should.have.deep.property("message", "Authorization header must be provided")
                 done()
             })
@@ -58,6 +59,7 @@ describe("UserController authentication Test", () => {
             .end((err, res) => {
                 err.should.not.be.null
                 res.should.have.status(HttpStatus.UNAUTHORIZED)
+                res.should.have.header("content-type", /application\/json.*/)
                 res.body.should.have.deep.property("message",
                     "Malformed Authorization header (must be 'Bearer' + token)")
                 done()
@@ -70,6 +72,7 @@ describe("UserController authentication Test", () => {
             .end((err, res) => {
                 err.should.not.be.null
                 res.should.have.status(HttpStatus.UNAUTHORIZED)
+                res.should.have.header("content-type", /application\/json.*/)
                 res.body.should.have.deep.property("message", "Unable to parse token")
                 done()
             })
@@ -81,17 +84,19 @@ describe("UserController authentication Test", () => {
             .end((err, res) => {
                 err.should.not.be.null
                 res.should.have.status(HttpStatus.UNAUTHORIZED)
+                res.should.have.header("content-type", /application\/json.*/)
                 res.body.should.have.deep.property("message", "Invalid token. User may have been deleted")
                 done()
             })
     })
 
-    it("Must return the user if a valid token is provided", (done) => {
+    it("Must return the requested resource if a valid token is provided", (done) => {
         chai.request(server).get("/users/1")
             .set("Authorization", `Bearer ${pavelToken}`)
             .end((err, res) => {
                 should.not.exist(err)
                 res.should.have.status(HttpStatus.OK)
+                res.should.have.header("content-type", /application\/hal\+json.*/)
                 res.body.should.have.nested.property("_embedded.username", "paveltrufi")
                 done()
             })
@@ -105,6 +110,7 @@ describe("UserController GET all users test", () => {
             .end((err, res) => {
                 should.exist(err)
                 res.should.have.status(HttpStatus.BAD_REQUEST)
+                res.should.have.header("content-type", /application\/json.*/)
                 res.body.should.have.deep.property("message",
                     "Lists must be paginated with start=<num>&size=<num> query params (use 0 to list all)")
                 done()
@@ -118,6 +124,7 @@ describe("UserController GET all users test", () => {
             .end((err, res) => {
                 should.exist(err)
                 res.should.have.status(HttpStatus.BAD_REQUEST)
+                res.should.have.header("content-type", /application\/json.*/)
                 res.body.should.have.deep.property("message",
                     "Lists must be paginated with start=<num>&size=<num> query params (use 0 to list all)")
                 done()
@@ -131,6 +138,7 @@ describe("UserController GET all users test", () => {
             .end((err, res) => {
                 should.not.exist(err)
                 res.should.have.status(HttpStatus.OK)
+                res.should.have.header("content-type", /application\/hal\+json.*/)
                 res.body.should.have.property("_embedded")
                 res.body._embedded.should.be.an("array").that.is.not.empty
                 res.body._embedded[0].should.matchPattern({
