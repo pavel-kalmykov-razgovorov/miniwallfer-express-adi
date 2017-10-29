@@ -166,17 +166,23 @@ describe("UserController tests", async () => {
         })
 
         it("Must throw BAD REQUEST if start or size query params have any not-numeric value", async () => {
-            try {
-                await chai.request(testServer).get("/users")
-                    .set("authorization", `Bearer ${pavelToken}`)
-                    .query({ start: "0", size: "A" })
-            } catch (error) {
-                const res = error.response as ChaiHttp.Response
-                res.should.have.status(HttpStatus.BAD_REQUEST)
-                res.should.have.header("content-type", /application\/json.*/)
-                res.body.should.have.deep.property("message",
-                    "Lists must be paginated with start=<num>&size=<num> query params (use 0 to list all)")
+            const callAllUsersWithWrongQueryParams = async (start, size) => {
+                try {
+                    await chai.request(testServer).get("/users")
+                        .set("authorization", `Bearer ${pavelToken}`)
+                        .query({ start, size })
+                } catch (error) {
+                    const res = error.response as ChaiHttp.Response
+                    res.should.have.status(HttpStatus.BAD_REQUEST)
+                    res.should.have.header("content-type", /application\/json.*/)
+                    res.body.should.have.deep.property("message",
+                        "Lists must be paginated with start=<num>&size=<num> query params (use 0 to list all)")
+                }
             }
+
+            callAllUsersWithWrongQueryParams(0, "A")
+            callAllUsersWithWrongQueryParams("A", 0)
+            callAllUsersWithWrongQueryParams("A", "A")
         })
 
         it("Must return a users' list if start or size query params exist but don't have any value", async () => {
@@ -346,6 +352,43 @@ describe("UserController tests", async () => {
     //         }
     //     })
     // })
+
+    describe("UserController::remove tests", () => {
+        const callDeleteUserWithUnexistentUserId = async (unexistentUserId) => {
+            try {
+                await chai.request(testServer)
+                    .del(`/users/${unexistentUserId}`)
+                    .set("authorization", `Bearer ${pavelToken}`)
+            } catch (error) {
+                const res = error.response as ChaiHttp.Response
+                res.should.have.status(HttpStatus.NOT_FOUND)
+                res.should.have.header("content-type", /application\/json.*/)
+                res.body.should.have.deep.property("message",
+                    `Cannot find user to remove by the given id: ${unexistentUserId}`)
+            }
+        }
+
+        it("Must return NOT FOUND if user's ID doesn't exist", async () => {
+            callDeleteUserWithUnexistentUserId("one")
+        })
+
+        it("Must return NO CONTENT if user has been deleted", async () => {
+            const res = await chai.request(testServer)
+                .del(`/users/${testSavedUser.id}`)
+                .set("authorization", `Bearer ${pavelToken}`)
+            res.should.have.status(HttpStatus.NO_CONTENT)
+            res.should.not.have.header("content-type")
+            res.body.should.be.empty
+        })
+
+        // FIXME
+        // it("Must return NOT FOUND if user is attempted to be deleted twice", async () => {
+        //     const res = await chai.request(testServer)
+        //         .del(`/users/${testSavedUser.id}`)
+        //         .set("authorization", `Bearer ${pavelToken}`)
+        //     callDeleteUserWithUnexistentUserId(testSavedUser.id)
+        // })
+    })
 })
 
 function checkUserSchema(firstUser: any) {
