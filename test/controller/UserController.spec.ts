@@ -178,9 +178,9 @@ describe("UserController tests", async () => {
                 }
             }
 
-            callAllUsersWithWrongQueryParams(0, "A")
-            callAllUsersWithWrongQueryParams("A", 0)
-            callAllUsersWithWrongQueryParams("A", "A")
+            await callAllUsersWithWrongQueryParams(0, "A")
+            await callAllUsersWithWrongQueryParams("A", 0)
+            await callAllUsersWithWrongQueryParams("A", "A")
         })
 
         it("Must return a users' list if start or size query params exist but don't have any value", async () => {
@@ -352,22 +352,23 @@ describe("UserController tests", async () => {
     // })
 
     describe("UserController::remove tests", () => {
-        const callDeleteUserWithUnexistentUserId = async (unexistentUserId) => {
+        const callDeleteUserWithUnexistentUserId = async (unexistentUserId, status: number, errorMessage: string) => {
             try {
                 await chai.request(testServer)
                     .del(`/users/${unexistentUserId}`)
                     .set("authorization", `Bearer ${pavelToken}`)
             } catch (error) {
                 const res = error.response as ChaiHttp.Response
-                res.should.have.status(HttpStatus.NOT_FOUND)
+                res.should.have.status(status)
                 res.should.have.header("content-type", /application\/json.*/)
-                res.body.should.have.deep.property("message",
-                    `Cannot find user to remove by the given id: ${unexistentUserId}`)
+                res.body.should.have.deep.property("message", errorMessage)
             }
         }
 
         it("Must return NOT FOUND if user's ID doesn't exist", async () => {
-            callDeleteUserWithUnexistentUserId("one")
+            const unexistentUserId = "one";
+            await callDeleteUserWithUnexistentUserId(unexistentUserId, HttpStatus.NOT_FOUND,
+                `Cannot find user to remove by the given id: ${unexistentUserId}`)
         })
 
         it("Must return NO CONTENT if user has been deleted", async () => {
@@ -379,13 +380,13 @@ describe("UserController tests", async () => {
             res.body.should.be.empty
         })
 
-        // FIXME
-        // it("Must return NOT FOUND if user is attempted to be deleted twice", async () => {
-        //     const res = await chai.request(testServer)
-        //         .del(`/users/${testSavedUser.id}`)
-        //         .set("authorization", `Bearer ${pavelToken}`)
-        //     callDeleteUserWithUnexistentUserId(testSavedUser.id)
-        // })
+        it("Must return UNAUTHORIZED if user is attempted to be deleted twice", async () => {
+            const res = await chai.request(testServer)
+                .del(`/users/${testSavedUser.id}`)
+                .set("authorization", `Bearer ${pavelToken}`)
+            await callDeleteUserWithUnexistentUserId(testSavedUser.id, HttpStatus.UNAUTHORIZED,
+                "Invalid token. User may have been deleted")
+        })
     })
 })
 

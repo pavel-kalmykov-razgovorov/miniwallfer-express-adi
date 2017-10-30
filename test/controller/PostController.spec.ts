@@ -6,7 +6,7 @@ import { classToPlain, plainToClass } from "class-transformer"
 import * as HttpStatus from "http-status-codes"
 import * as jwt from "jwt-simple"
 import "reflect-metadata"
-import { Repository } from "typeorm"
+import { Connection, Repository } from "typeorm"
 import * as util from "util"
 import { Post } from "../../src/entity/Post"
 import { User } from "../../src/entity/User"
@@ -43,7 +43,7 @@ describe("PostController tests", () => {
         text: "This is an another post example",
         user: exampleUser,
     })
-    let testConnection = null
+    let testConnection: Connection = null
     let testServer = null
     let testUserRepository: Repository<User> = null
     let testPostRepository: Repository<Post> = null
@@ -228,8 +228,9 @@ describe("PostController tests", () => {
                     property: "text",
                     value: "",
                     children: [],
-                    constraints: { isNotEmpty: "text should not be empty",
-                },
+                    constraints: {
+                        isNotEmpty: "text should not be empty",
+                    },
                 }])
             }
         })
@@ -252,6 +253,63 @@ describe("PostController tests", () => {
             // even if you delete the password and format the birthdate to ISO String from the original object
             savedPost.should.have.nested.property("user._embedded.id", testSavedUser.id)
         })
+    })
+
+    describe("PostController::remove tests", () => {
+        const callDeletePostWithError = async (userId, postId, status: number, errorMessage: string) => {
+            try {
+                await chai.request(testServer)
+                    .del(`/users/${userId}/posts/${postId}`)
+                    .set("authorization", `Bearer ${pavelToken}`)
+            } catch (error) {
+                const res = error.response as ChaiHttp.Response
+                res.should.have.status(status)
+                res.should.have.header("content-type", /application\/json.*/)
+                res.body.should.have.deep.property("message", errorMessage)
+            }
+        }
+
+        it("Must return BAD REQUEST if user's ID is not numeric", async () => {
+            await callDeletePostWithError("one", "two", HttpStatus.BAD_REQUEST, "User's ID not present in URL")
+        })
+
+        it("Must return BAD REQUEST if posts's ID is not numeric", async () => {
+            await callDeletePostWithError(0, "two", HttpStatus.BAD_REQUEST, "Post's ID not present in URL")
+        })
+
+        it("Must return UNAUTHORIZED if user isn't the post owner", async () => {
+            await callDeletePostWithError(testAnotherSavedUser.id, 0, HttpStatus.UNAUTHORIZED,
+                "Trying to access someone else's resources")
+        })
+
+        it("Must return NOT FOUND if post doesn't exist", async () => {
+            await callDeletePostWithError(testSavedUser.id, 0, HttpStatus.NOT_FOUND,
+                "Cannot find post to remove by the given id: 0")
+        })
+
+        it("Must return NO CONTENT if post has been deleted", async () => {
+            const res = await chai.request(testServer)
+                .del(`/users/${testSavedUser.id}/posts/${testSavedPost.id}`)
+                .set("authorization", `Bearer ${pavelToken}`)
+            res.should.have.status(HttpStatus.NO_CONTENT)
+            res.should.not.have.header("content-type")
+            res.body.should.be.empty
+            const postCount = await testConnection
+                .createQueryBuilder()
+                .select()
+                .from(Post, "post")
+                .whereInIds([testSavedPost.id])
+                .getCount()
+            postCount.should.be.eql(0)
+        })
+
+        // FIXME
+        // it("Must return NOT FOUND if user is attempted to be deleted twice", async () => {
+        //     const res = await chai.request(testServer)
+        //         .del(`/users/${testSavedUser.id}`)
+        //         .set("authorization", `Bearer ${pavelToken}`)
+        //     callDeleteUserWithUnexistentUserId(testSavedUser.id)
+        // })
     })
 })
 

@@ -223,8 +223,8 @@ export class PostController {
     private async checkUsersAndPostsIds(request: Request, response: Response, next: NextFunction) {
         const postId = request.params.postId
         const userId = request.params.userId
-        this.checkPostsId(postId)
         this.checkUsersId(userId)
+        this.checkPostsId(postId)
         await this.checkUserPermissions(request, response, next, userId)
     }
 
