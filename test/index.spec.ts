@@ -6,12 +6,8 @@ import "reflect-metadata"
 import server = require("../src/server")
 import { getConnection } from "./testConnection"
 
-process.env.NODE_ENV = "test"
-
 chai.use(chaiHttp)
 const should = chai.should()
-
-const jwtTestSecret = "putopavel123"
 
 describe("Example test", async () => {
     let testServer = null

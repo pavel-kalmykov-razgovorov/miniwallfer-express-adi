@@ -9,4 +9,6 @@ const testConnection = {
     entities: ["src/entity/**/*.ts"],
 } as SqliteConnectionOptions
 
+process.env.NODE_ENV = "test"
+
 export const getConnection = createConnection(testConnection)

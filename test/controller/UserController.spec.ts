@@ -11,8 +11,6 @@ import { User } from "../../src/entity/User"
 import server = require("../../src/server")
 import { getConnection } from "../testConnection"
 
-process.env.NODE_ENV = "test"
-
 chai.use(chaiHttp)
 chai.use(chaiMatchPattern)
 const should = chai.should()
