@@ -10,8 +10,9 @@ import PostHalUtils from "../hateoas/PostHalUtils"
 import { UserController } from "./UserController"
 
 export class PostController {
-    private userController = new UserController()
+    private userController = new UserController() // FIXME
     private postRepository = getRepository(Post)
+    private userRepository = getRepository(User)
 
     /**
      * @swagger
@@ -118,8 +119,7 @@ export class PostController {
         }
         return transformAndValidate(Post, newPost, { validator: { validationError: { target: false } } })
             .then(async (validatedPost: Post) => {
-                validatedPost.user = new User()
-                validatedPost.user.id = userId
+                validatedPost.user = await this.userRepository.findOneById(userId)
                 const savedPost = await this.postRepository.save(validatedPost)
                 response.status(HttpStatus.CREATED)
                 response.location(`${request.protocol}://${request.get("host")}${request.url}/${savedPost.id}`)
